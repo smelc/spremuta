@@ -18,16 +18,22 @@ common common-all
      default-language: Haskell2010
      build-depends:    base ^>=4.17.0.0
                      , aeson
+                     , conduit
                      , extra
                      , http-conduit
      hs-source-dirs:   lib
      other-modules:    Parse
+                     , Request
                      , Types
      ghc-options:
                        -Wall
                        -Wno-name-shadowing
                        -Werror
                        -Wwarn=missing-home-modules
+    default-extensions: NamedFieldPuns
+                        LambdaCase
+                        OverloadedStrings
+                        ScopedTypeVariables
 
 
 executable spremuta
@@ -45,6 +51,3 @@ executable spremuta
                     , http-conduit
     hs-source-dirs:   app
     default-language: Haskell2010
-    default-extensions: LambdaCase
-                        OverloadedStrings
-                        ScopedTypeVariables
