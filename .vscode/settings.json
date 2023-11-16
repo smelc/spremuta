@@ -1,0 +1,3 @@
+{
+        "haskell.serverExecutablePath": "${workspaceFolder}/bin/hls/bin/haskell-language-server-9.4.7"
+}
