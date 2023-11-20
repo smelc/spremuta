@@ -14,7 +14,7 @@ main = do
   prURL <- case args of
       (url:_) -> return $ PRURL url
       []      -> emojiDie "Please provide a pull request URL as an argument."
-  bits <- case Parse.url prURL of
+  bits <- case Parse.any prURL of
     Right bits -> return bits
     Left err   -> emojiDie err
   putStr $ show bits
