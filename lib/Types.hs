@@ -11,26 +11,10 @@ data PRBits = PRBits {
   number :: Int
 } deriving (Show)
 
--- | A typeclass to identify the VCS we're dealing with
-class VCS a where
-  -- Empty
-
--- If you add a new tag, extend 'AllVCS' accordingly
-
--- | A tag to identify data that lives on GitHub
-data GitHub
-
-instance VCS GitHub
-
--- | A tag to identify data that lives on GitLab
-data GitLab
-
-instance VCS GitLab
-
-data OneVCS =
+data VCSKind =
   GitHub
   | GitLab
   deriving (Show, Bounded, Enum)
 
-vcss :: [OneVCS]
+vcss :: [VCSKind]
 vcss = [minBound .. maxBound]

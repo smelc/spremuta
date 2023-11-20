@@ -1,5 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DataKinds #-}
 -- | This module is meant to be used qualified
 module Parse (
   any,
@@ -13,7 +15,7 @@ import           Data.Function   ((&))
 import           Data.List.Extra (splitOn, stripInfix)
 import           Text.Read       (readMaybe)
 
-class VCSParser vcs where
+class VCSParser (vcs :: VCSKind) where
   parseURL :: PRURL -> Either String PRBits
 
 any :: PRURL -> Either String PRBits
@@ -28,13 +30,13 @@ any pr@(PRURL url) =
         Right x -> Right x
     parsers :: [PRURL -> Either String PRBits]
     parsers = map parseOne vcss
-    parseOne :: OneVCS -> PRURL -> Either String PRBits
-    parseOne (vcs :: OneVCS) =
+    parseOne :: VCSKind -> PRURL -> Either String PRBits
+    parseOne (vcs :: VCSKind) =
       case vcs of
-        GitHub -> parseURL @GitHub
-        GitLab -> parseURL @GitLab
+        GitHub -> parseURL @'GitHub
+        GitLab -> parseURL @'GitLab
 
-instance VCSParser GitHub where
+instance VCSParser 'GitHub where
   parseURL (PRURL url) = do
     -- Suppose @url@ is "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
     (_, afterProtocol) <- stripInfix "//" url & \case Nothing -> Left $ "Double slash not found in URL: " ++ url
@@ -51,7 +53,7 @@ instance VCSParser GitHub where
                                           Just x -> Right x
     return $ PRBits owner repo number
 
-instance VCSParser GitLab where
+instance VCSParser 'GitLab where
   parseURL (PRURL url) = do
     -- Suppose @url@ is "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
     (_, afterProtocol) <- stripInfix "//" url & \case Nothing -> Left $ "Double slash not found in URL: " ++ url

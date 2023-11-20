@@ -27,6 +27,7 @@ common common-all
                      , Types
      ghc-options:
                        -Wall
+                       -Wunticked-promoted-constructors
                        -Wno-name-shadowing
                        -Werror
                        -Wwarn=missing-home-modules
