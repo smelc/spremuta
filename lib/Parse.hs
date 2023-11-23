@@ -1,7 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE TypeApplications    #-}
 -- | This module is meant to be used qualified
 module Parse (
   any,
@@ -15,7 +15,7 @@ import           Data.Function   ((&))
 import           Data.List.Extra (splitOn, stripInfix)
 import           Text.Read       (readMaybe)
 
-class VCSParser (vcs :: VCSKind) where
+class VCSParser (vcs :: VCS) where
   parseURL :: PRURL -> Either String PRBits
 
 any :: PRURL -> Either String PRBits
@@ -30,11 +30,8 @@ any pr@(PRURL url) =
         Right x -> Right x
     parsers :: [PRURL -> Either String PRBits]
     parsers = map parseOne vcss
-    parseOne :: VCSKind -> PRURL -> Either String PRBits
-    parseOne (vcs :: VCSKind) =
-      case vcs of
-        GitHub -> parseURL @'GitHub
-        GitLab -> parseURL @'GitLab
+    parseOne :: VCS -> PRURL -> Either String PRBits
+    parseOne = \case GitHub -> parseURL @'GitHub; GitLab -> parseURL @'GitLab
 
 instance VCSParser 'GitHub where
   parseURL (PRURL url) = do
@@ -51,7 +48,7 @@ instance VCSParser 'GitHub where
         numberStr = segments !! 4
     number <- readMaybe numberStr & \case Nothing -> Left $ "Cannot parse pull request number: " ++ numberStr
                                           Just x -> Right x
-    return $ PRBits owner repo number
+    return $ PRBits owner repo number GitHub
 
 instance VCSParser 'GitLab where
   parseURL (PRURL url) = do
@@ -68,4 +65,4 @@ instance VCSParser 'GitLab where
         numberStr = segments !! 5
     number <- readMaybe numberStr & \case Nothing -> Left $ "Cannot parse pull request number: " ++ numberStr
                                           Just x -> Right x
-    return $ PRBits owner repo number
+    return $ PRBits owner repo number GitLab

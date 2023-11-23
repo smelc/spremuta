@@ -1,12 +1,20 @@
+{-# LANGUAGE PartialTypeSignatures #-}
 module Main where
 
+import           Network.HTTP.Simple (httpJSON)
+import qualified Network.HTTP.Simple as C
 import qualified Parse
-import           System.Environment (getArgs)
-import           System.Exit        (die)
-import           Types              (PRURL (..))
+import qualified Request
+import           System.Environment  (getArgs)
+import           System.Exit         (die)
+import           Types               (PRURL (..))
+import Data.Functor
 
 emojiDie :: String -> IO a
 emojiDie msg = die $ "❌ " ++ msg
+
+-- handleResponse :: Exception exc => Either exc a -> IO a
+-- fromEither
 
 main :: IO ()
 main = do
@@ -18,6 +26,10 @@ main = do
     Right bits -> return bits
     Left err   -> emojiDie err
   putStr $ show bits
+  req <- Request.getPR bits
+  resp :: Request.GetPRResponse <- httpJSON req <&> C.getResponseBody
+  print resp
+  undefined
 
 -- getPullRequest :: PullRequestUrl -> IO ()
 -- getPullRequest url = do

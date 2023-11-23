@@ -8,13 +8,14 @@ newtype PRURL = PRURL String
 data PRBits = PRBits {
   owner  :: String,
   repo   :: String,
-  number :: Int
+  number :: Int,
+  vcs :: VCS
 } deriving (Show)
 
-data VCSKind =
+data VCS =
   GitHub
   | GitLab
   deriving (Show, Bounded, Enum)
 
-vcss :: [VCSKind]
+vcss :: [VCS]
 vcss = [minBound .. maxBound]
