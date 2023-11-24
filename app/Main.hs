@@ -1,4 +1,3 @@
-{-# LANGUAGE PartialTypeSignatures #-}
 module Main where
 
 import           Network.HTTP.Simple (httpJSON)
@@ -12,9 +11,6 @@ import Data.Functor
 
 emojiDie :: String -> IO a
 emojiDie msg = die $ "❌ " ++ msg
-
--- handleResponse :: Exception exc => Either exc a -> IO a
--- fromEither
 
 main :: IO ()
 main = do
@@ -30,17 +26,3 @@ main = do
   resp :: Request.GetPRResponse <- httpJSON req <&> C.getResponseBody
   print resp
   undefined
-
--- getPullRequest :: PullRequestUrl -> IO ()
--- getPullRequest url = do
---   request <- parseRequest url
---   response <- httpJSON request
---   let isDraft = response & getResponseBody
---   let statusChecksPass = undefined -- You'll need to fill this in based on the GitHub API
---   undefined
-
--- markReady :: PullRequestUrl -> IO ()
--- markReady url = do
---    request <- parseRequest ("POST " ++ url ++ "/ready_for_review")
---    _ <- httpNoBody request
---    return ()

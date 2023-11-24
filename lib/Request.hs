@@ -28,17 +28,21 @@ getPR (PRBits {owner, repo, number, vcs}) =
   case vcs of
     GitHub -> do
       req <- parseRequest $ "GET " <> url
-      return $ setGHHeaders req
+      return $ setHeaders' req
     GitLab -> error "getPR: GitLab not supported"
     where
       url = "https://api.github.com/repos/" ++ owner <> "/" ++ repo ++ "/pulls/" ++ show number
+      setHeaders' = setHeaders vcs
 
-setGHHeaders :: Request -> Request
-setGHHeaders req =
-  req
-    & addHeader app
-    & addHeader version
+setHeaders :: VCS -> Request -> Request
+setHeaders vcs req =
+  case vcs of
+    GitHub -> 
+      req'
+        & addHeader ("Accept", "application/vnd.github+json")
+        & addHeader ("X-GitHub-Api-Version", "2022-11-28")
+    GitLab -> error "SetHeaders: GitLab not supported"
   where
     addHeader (name, value) = addRequestHeader name value
-    app = ("Accept", "application/vnd.github+json")
-    version = ("X-GitHub-Api-Version", "2022-11-28")
+    agent = ("User-Agent", "HTTP-Conduit")
+    req' = addHeader agent req
