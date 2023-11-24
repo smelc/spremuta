@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeApplications    #-}
 -- | This module is meant to be used qualified
 module Parse (
-  any,
+  prURL,
   ) where
 import           Types
 
@@ -18,8 +18,8 @@ import           Text.Read       (readMaybe)
 class VCSParser (vcs :: VCS) where
   parseURL :: PRURL -> Either String PRBits
 
-any :: PRURL -> Either String PRBits
-any pr@(PRURL url) =
+prURL :: PRURL -> Either String PRBits
+prURL pr@(PRURL url) =
   go parsers
   where
     go :: [PRURL -> Either String PRBits] -> Either String PRBits
