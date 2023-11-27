@@ -1,22 +1,37 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE TypeApplications    #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 -- | This module is meant to be used qualified
 module Parse (
   prURL,
-  ) where
+  )
+  where
 import           Types
 
-import           Prelude         hiding (any)
+import           Prelude
 
-import           Control.Monad   (when)
-import           Data.Function   ((&))
-import           Data.List.Extra (splitOn, stripInfix)
-import           Text.Read       (readMaybe)
+import           Control.Monad        (unless)
+import           Control.Monad.Extra  (void)
+import           Data.Char            (isDigit)
+import           Data.Either.Extra    (mapLeft)
+import           Data.Function        ((&))
+import           Data.List.Extra      (isInfixOf)
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
+
+{- HLINT ignore "Use section" -}
+
+type Parser = Parsec String String {- error type, input type -}
 
 class VCSParser (vcs :: VCS) where
-  parseURL :: PRURL -> Either String PRBits
+  parser :: Parser PRBits
+
+instance ShowErrorComponent String where
+  showErrorComponent = id
 
 prURL :: PRURL -> Either String PRBits
 prURL pr@(PRURL url) =
@@ -31,38 +46,60 @@ prURL pr@(PRURL url) =
     parsers :: [PRURL -> Either String PRBits]
     parsers = map parseOne vcss
     parseOne :: VCS -> PRURL -> Either String PRBits
-    parseOne = \case GitHub -> parseURL @'GitHub; GitLab -> parseURL @'GitLab
+    parseOne vcs (PRURL url)=
+      runParser
+        (case vcs of
+          GitHub -> parser @'GitHub
+          GitLab -> parser @'GitLab)
+        ""
+        url
+        & mapLeft errorBundlePretty
+
+_pKind :: Parser TodoKind
+_pKind = choice
+  [ MergeKind <$ string "merge"
+  , SetReadyKind <$ string "setready" ]
+
+pProtocol :: Parser String
+pProtocol = choice
+  [ string "https" -- Order matters with common prefixes in choice!
+  , string "http"
+  , string "ssh" ]
+
+-- | Parses a segment of a URL, which is not the last, because it must
+-- end with a slash. The argument indicates what should be parsed (for error messages)
+parseUntilSlashInc :: String -> Parser String
+parseUntilSlashInc label = do
+  res <- takeWhile1P (Just label) ((/=) '/')
+  void $ string "/"
+  return res
+
+-- | @"Foobarbidule" `contains` "bar"@ holds
+contains :: String -> String -> Bool
+contains = flip isInfixOf
 
 instance VCSParser 'GitHub where
-  parseURL (PRURL url) = do
-    -- Suppose @url@ is "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
-    (_, afterProtocol) <- stripInfix "//" url & \case Nothing -> Left $ "Double slash not found in URL: " ++ url
-                                                      Just x -> Right x
-    -- @afterProtocol@ is "github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
-    let segments = splitOn "/" afterProtocol
-    -- @segments@ is "["github.com","tbagrel1","datasheet_aggregator_10th","pull","12"]"
-    let nbSegments = length segments
-    when (nbSegments < 5) (Left $ "URL doesn't have enough segments (after the protocol): " ++ url ++ ". Expected at least 5, but found " ++ show nbSegments)
-    let owner = segments !! 1
-        repo = segments !! 2
-        numberStr = segments !! 4
-    number <- readMaybe numberStr & \case Nothing -> Left $ "Cannot parse pull request number: " ++ numberStr
-                                          Just x -> Right x
+  parser = do
+    -- Suppose URL is "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
+    _protocol <- pProtocol  -- Read "https"
+    void $ string "://"
+    host <- parseUntilSlashInc "host" -- Read "github.com"
+    unless (host `contains` "github") $ customFailure $ "Expected github to appear in hostname, but found: \"" ++ host ++ "\""
+    owner <- parseUntilSlashInc "owner" -- Read "tbagrel1"
+    repo <- parseUntilSlashInc "repository name" -- Read "datasheet_aggregator_10th/"
+    void "pull/"
+    number <- read <$> takeWhile1P (Just "PR number") isDigit
     return $ PRBits owner repo number GitHub
 
 instance VCSParser 'GitLab where
-  parseURL (PRURL url) = do
+  parser = do
     -- Suppose @url@ is "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
-    (_, afterProtocol) <- stripInfix "//" url & \case Nothing -> Left $ "Double slash not found in URL: " ++ url
-                                                      Just x -> Right x
-    -- @afterProtocol@ is "gitlab.com/tezos/tezos/-/merge_requests/10922"
-    let segments = splitOn "/" afterProtocol
-    -- @segments@ is @["gitlab.com","tezos","tezos","-","merge_requests","10922"]@
-    let nbSegments = length segments
-    when (nbSegments < 6) (Left $ "URL doesn't have enough segments (after the protocol): " ++ url ++ ". Expected at least 6, but found " ++ show nbSegments)
-    let owner = segments !! 1
-        repo = segments !! 2
-        numberStr = segments !! 5
-    number <- readMaybe numberStr & \case Nothing -> Left $ "Cannot parse pull request number: " ++ numberStr
-                                          Just x -> Right x
+    _protocol <- pProtocol  -- Read "https"
+    void $ string "://"
+    host <- parseUntilSlashInc "host" -- Read "gitlab.com"
+    unless (host `contains` "gitlab") $ customFailure $ "Expected gitlab to appear in hostname, but found: \"" ++ host ++ "\""
+    owner <- parseUntilSlashInc "owner" -- Read "tezos"
+    repo <- parseUntilSlashInc "repository name" -- Read "tezos"
+    void "-/merge_requests/"
+    number <- read <$> takeWhile1P (Just "PR number") isDigit
     return $ PRBits owner repo number GitLab

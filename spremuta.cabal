@@ -21,6 +21,7 @@ common common-all
                      , conduit
                      , extra
                      , http-conduit
+                     , megaparsec
      hs-source-dirs:   lib
      other-modules:    Parse
                      , Request
