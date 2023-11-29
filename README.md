@@ -1,4 +1,6 @@
-# Setup
+# Spremuta 🍊
+
+## Setup
 
 First, install [ghcup](https://www.haskell.org/ghcup/) and [direnv](https://direnv.net/)
 

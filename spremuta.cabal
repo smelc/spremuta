@@ -26,17 +26,17 @@ common common-all
      other-modules:    Parse
                      , Request
                      , Types
-     ghc-options:
-                       -Wall
+     ghc-options:      -Wall
                        -Wunticked-promoted-constructors
                        -Wno-name-shadowing
                        -Werror
                        -Wwarn=missing-home-modules
-    default-extensions: NamedFieldPuns
+    default-extensions: DataKinds
+                        NamedFieldPuns
                         LambdaCase
                         OverloadedStrings
                         ScopedTypeVariables
-
+                        TypeApplications
 
 executable spremuta
     import: common-all
@@ -53,3 +53,14 @@ executable spremuta
                     , http-conduit
     hs-source-dirs:   app
     default-language: Haskell2010
+
+Test-Suite testmuta
+    import:           common-all
+    type:             exitcode-stdio-1.0
+    main-is:          Main.hs
+    hs-source-dirs:   lib
+                    , test
+    other-modules:
+    build-depends:    generic-random
+                    , hspec
+                    , QuickCheck

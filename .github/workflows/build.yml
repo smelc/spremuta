@@ -61,9 +61,8 @@ jobs:
       - name: Build
         run: cabal build all
 
-      # No tests for now
-      # - name: Run tests
-      #   run: cabal test all
+      - name: Run tests
+        run: cabal test all
 
       # Doesn't pass now
       # - name: Check cabal file

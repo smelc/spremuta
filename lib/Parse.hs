@@ -8,6 +8,7 @@
 -- | This module is meant to be used qualified
 module Parse (
   prURL,
+  VCSParser(..)
   )
   where
 import           Types

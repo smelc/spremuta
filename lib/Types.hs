@@ -17,7 +17,7 @@ data PRBits = PRBits {
 data VCS =
   GitHub
   | GitLab
-  deriving (Show, Bounded, Enum)
+  deriving (Eq, Show, Bounded, Enum)
 
 -- | All supported version control systems
 vcss :: [VCS]
