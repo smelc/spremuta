@@ -10,7 +10,7 @@ import           Data.Aeson          (FromJSON, ToJSON)
 import           Data.Function       ((&))
 import           GHC.Generics
 import           Network.HTTP.Simple (Request, addRequestHeader, parseRequest)
-import           Types               (PRBits (..), VCS (..))
+import           Types               (PR (..), VCS (..))
 
 data GetPRResponse = GetPRResponse {
     url    :: String,
@@ -23,8 +23,8 @@ instance ToJSON GetPRResponse where
 instance FromJSON GetPRResponse where
 
 -- | https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
-getPR :: MonadThrow m => PRBits -> m Request
-getPR (PRBits {owner, repo, number, vcs}) =
+getPR :: MonadThrow m => PR -> m Request
+getPR (PR {owner, repo, number, vcs}) =
   case vcs of
     GitHub -> do
       req <- parseRequest $ "GET " <> url

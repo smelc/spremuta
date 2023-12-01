@@ -5,9 +5,8 @@
 {-# LANGUAGE TypeApplications    #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
--- | This module is meant to be used qualified
 module Parse (
-  prURL,
+  parseURL,
   VCSParser(..)
   )
   where
@@ -29,32 +28,37 @@ import           Text.Megaparsec.Char
 type Parser = Parsec String String {- error type, input type -}
 
 class VCSParser (vcs :: VCS) where
-  parser :: Parser PRBits
+  parser :: Parser PR
 
 instance ShowErrorComponent String where
   showErrorComponent = id
 
-prURL :: PRURL -> Either String PRBits
-prURL pr@(PRURL url) =
-  go parsers
+parseURL :: PRURL -> Either String PR
+parseURL (PRURL url) = runParser pPR "" url & mapLeft errorBundlePretty
+
+pPR :: Parser PR
+pPR = go parsers
   where
-    go :: [PRURL -> Either String PRBits] -> Either String PRBits
-    go [] = Left $ "Cannot parse PR URL: " <> url <> ". Tried all VCS: " <> show vcss
-    go (parser : rest) =
-      case parser pr of
-        Left _  -> go rest
-        Right x -> Right x
-    parsers :: [PRURL -> Either String PRBits]
-    parsers = map parseOne vcss
-    parseOne :: VCS -> PRURL -> Either String PRBits
-    parseOne vcs (PRURL url)=
-      runParser
-        (case vcs of
+    go = \case
+      [] -> customFailure $ "Cannot parse URL. Tried all VCS: " <> show vcss
+      p : rest -> try p <|> go rest
+    parsers :: [Parser PR]
+    parsers = map parserFor vcss
+    parserFor :: VCS -> Parser PR
+    parserFor = \case
           GitHub -> parser @'GitHub
-          GitLab -> parser @'GitLab)
-        ""
-        url
-        & mapLeft errorBundlePretty
+          GitLab -> parser @'GitLab
+
+_pTodo :: Parser Todo
+_pTodo = choice [ pMerge, pNotify, pSetReady ]
+  where
+    pMerge = do
+      void $ string "merge"
+      hspace1
+      -- takeWhile1P (Just "whitespace") isSpace
+      return $ Merge undefined
+    pNotify = undefined
+    pSetReady = undefined
 
 _pKind :: Parser TodoKind
 _pKind = choice
@@ -90,7 +94,7 @@ instance VCSParser 'GitHub where
     repo <- parseUntilSlashInc "repository name" -- Read "datasheet_aggregator_10th/"
     void "pull/"
     number <- read <$> takeWhile1P (Just "PR number") isDigit
-    return $ PRBits owner repo number GitHub
+    return $ PR owner repo number GitHub
 
 instance VCSParser 'GitLab where
   parser = do
@@ -103,4 +107,4 @@ instance VCSParser 'GitLab where
     repo <- parseUntilSlashInc "repository name" -- Read "tezos"
     void "-/merge_requests/"
     number <- read <$> takeWhile1P (Just "PR number") isDigit
-    return $ PRBits owner repo number GitLab
+    return $ PR owner repo number GitLab

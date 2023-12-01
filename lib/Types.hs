@@ -6,7 +6,7 @@ newtype PRURL = PRURL String
 
 -- | Components that matter to call the GitHub API on the pull request
 -- URL provided by the user.
-data PRBits = PRBits {
+data PR = PR {
   owner  :: String,
   repo   :: String,
   number :: Int,
@@ -28,8 +28,9 @@ data Task = Task Todo Condition
 
 -- | An effect that spremuta does on the world
 data Todo =
-    Merge PRURL -- ^ The task to merge a PR, for example "merge https://github.com/smelc/spremuta/pull/12"
-  | SetReady PRURL -- ^ The task to undraft/set ready a PR, for example "setready https://github.com/smelc/spremuta/pull/12"
+    Merge PR -- ^ The task to merge a PR, for example "merge https://github.com/smelc/spremuta/pull/12"
+  | Notify -- ^ Notify the user of something
+  | SetReady PR -- ^ The task to undraft/set ready a PR, for example "setready https://github.com/smelc/spremuta/pull/12"
   deriving (Show)
 
 data TodoKind =
@@ -43,6 +44,6 @@ allTodoKinds = [minBound .. maxBound]
 -- | Some Boolean condition
 data Condition =
     TrueCond
-  | IsMerged PRURL
-  | HasGreenCI PRURL
+  | IsMerged PR
+  | HasGreenCI PR
   deriving (Show)
