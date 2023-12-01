@@ -1,5 +1,6 @@
 module Main where
 
+import           Data.Functor
 import           Network.HTTP.Simple (httpJSON)
 import qualified Network.HTTP.Simple as C
 import qualified Parse
@@ -7,7 +8,6 @@ import qualified Request
 import           System.Environment  (getArgs)
 import           System.Exit         (die)
 import           Types               (PRURL (..))
-import Data.Functor
 
 emojiDie :: String -> IO a
 emojiDie msg = die $ "❌ " ++ msg

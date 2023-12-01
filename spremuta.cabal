@@ -57,7 +57,7 @@ executable spremuta
 Test-Suite testmuta
     import:           common-all
     type:             exitcode-stdio-1.0
-    main-is:          Main.hs
+    main-is:          Test.hs
     hs-source-dirs:   lib
                     , test
     other-modules:
