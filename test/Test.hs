@@ -18,25 +18,31 @@ shouldSatisfyRight (Left a) _ = expectationFailure $ "Expected Right, got (Left 
 shouldSatisfyRight (Right x) f | f x = pure ()
 shouldSatisfyRight (Right x) _ = expectationFailure (show x ++ " doesn't satisfy the predicate")
 
-runURLParser parser url =
+runParser parser url =
   case MP.runParser parser "" url of
     Left error -> Left $ MP.errorBundlePretty error
     Right x    -> Right x
 
+parseGitHubURLs :: Expectation
+parseGitHubURLs = do
+  runParser (Parse.parser @'GitHub) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
+    `shouldSatisfy` isRight
+  runParser (Parse.parser @'GitHub) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
+    `shouldSatisfyRight` (\bits -> bits.vcs == GitHub)
+  runParser (Parse.parser @'GitHub) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
+    `shouldSatisfy` isLeft
+
+parseGitLabURLs :: Expectation
+parseGitLabURLs = do
+  runParser (Parse.parser @'GitLab) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
+    `shouldSatisfy` isRight
+  runParser (Parse.parser @'GitLab) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
+    `shouldSatisfyRight` (\bits -> bits.vcs == GitLab)
+  runParser (Parse.parser @'GitLab) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
+    `shouldSatisfy` isLeft
+
 main :: IO ()
 main = hspec $ do
   describe "parse URL" $ do
-    it "GitHub" $ do
-      runURLParser (Parse.parser @'GitHub) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
-        `shouldSatisfy` isRight
-      runURLParser (Parse.parser @'GitHub) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
-        `shouldSatisfyRight` (\bits -> bits.vcs == GitHub)
-      runURLParser (Parse.parser @'GitHub) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
-        `shouldSatisfy` isLeft
-    it "GitLab" $ do
-      runURLParser (Parse.parser @'GitLab) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
-        `shouldSatisfy` isRight
-      runURLParser (Parse.parser @'GitLab) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
-        `shouldSatisfyRight` (\bits -> bits.vcs == GitLab)
-      runURLParser (Parse.parser @'GitLab) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
-        `shouldSatisfy` isLeft
+    it "GitHub" parseGitHubURLs
+    it "GitLab" parseGitLabURLs

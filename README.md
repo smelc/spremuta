@@ -2,10 +2,10 @@
 
 ## Setup
 
-First, install [ghcup](https://www.haskell.org/ghcup/) and [direnv](https://direnv.net/)
+First, install [ghcup](https://www.haskell.org/ghcup/) and [direnv](https://direnv.net/). Then do:
 
 ```shell
-for tool in cabal ghc hls
+for tool in cabal ghc
 do
   mkdir -p bin/$tool
 done
@@ -23,4 +23,4 @@ mv ormolu $(pwd)/bin/.
 rm ormolu.zip
 ```
 
-Then `direnv allow`, so that the `.envrc` file gets loaded automatically, and you are all set.
+Then `direnv allow`, so that the `.envrc` file gets loaded automatically, and you are all set 🎉
