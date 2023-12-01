@@ -23,6 +23,21 @@ runParser parser url =
     Left error -> Left $ MP.errorBundlePretty error
     Right x    -> Right x
 
+parseTasks :: Expectation
+parseTasks = do
+  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1"
+    `shouldSatisfy` isRight
+  runParser Parse.pTask "merge https://github.com/too_short"
+    `shouldSatisfy` isLeft
+  runParser Parse.pTask "wrong https://github.com/smelc/spremuta/pull/1"
+    `shouldSatisfy` isLeft
+  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when True"
+    `shouldSatisfy` isRight
+  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 isready"
+    `shouldSatisfy` isRight
+  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 hasgreenci"
+    `shouldSatisfy` isRight
+
 parseGitHubURLs :: Expectation
 parseGitHubURLs = do
   runParser (Parse.parser @'GitHub) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
@@ -46,3 +61,5 @@ main = hspec $ do
   describe "parse URL" $ do
     it "GitHub" parseGitHubURLs
     it "GitLab" parseGitLabURLs
+  describe "parse tasks" $ do
+    it "Tasks" parseTasks

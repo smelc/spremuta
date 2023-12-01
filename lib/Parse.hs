@@ -7,6 +7,7 @@
 
 module Parse (
   parseURL,
+  pTask,
   VCSParser(..)
   )
   where
@@ -19,7 +20,9 @@ import           Control.Monad.Extra  (void)
 import           Data.Char            (isDigit)
 import           Data.Either.Extra    (mapLeft)
 import           Data.Function        ((&))
+import           Data.Functor         (($>))
 import           Data.List.Extra      (isInfixOf)
+import           Data.Maybe           (fromMaybe)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
@@ -49,21 +52,41 @@ pPR = go parsers
           GitHub -> parser @'GitHub
           GitLab -> parser @'GitLab
 
-_pTodo :: Parser Todo
-_pTodo = choice [ pMerge, pNotify, pSetReady ]
+pTask :: Parser Task
+pTask = do
+   todo <- pTodo
+   condition <- optional pCondition
+   return $ Task todo (fromMaybe TrueCond condition)
+
+pTodo :: Parser Todo
+pTodo = choice [ pMerge, pNotify, pSetReady ]
   where
     pMerge = do
       void $ string "merge"
       hspace1
-      -- takeWhile1P (Just "whitespace") isSpace
-      return $ Merge undefined
-    pNotify = undefined
-    pSetReady = undefined
+      Merge <$> pPR
+    pNotify = do
+      void $ string "notify"
+      return Notify
+    pSetReady = do
+      void $ string "setready"
+      hspace1
+      SetReady <$> pPR
 
-_pKind :: Parser TodoKind
-_pKind = choice
-  [ MergeKind <$ string "merge"
-  , SetReadyKind <$ string "setready" ]
+pCondition :: Parser Condition
+pCondition = choice [pTrueCond, pIsMerged, pHasGreenCI]
+  where
+    pTrueCond = string "True" $> TrueCond
+    pIsMerged = do
+      pr <- pPR
+      hspace1
+      void $ string "ismerged"
+      return $ IsMerged pr
+    pHasGreenCI = do
+      pr <- pPR
+      hspace1
+      void $ string "hasgreenci"
+      return $ HasGreenCI pr
 
 pProtocol :: Parser String
 pProtocol = choice

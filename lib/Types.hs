@@ -25,21 +25,22 @@ vcss = [minBound .. maxBound]
 
 -- | A task: a single line in a spremuta.tasks file
 data Task = Task Todo Condition
+  deriving (Show)
 
 -- | An effect that spremuta does on the world
 data Todo =
     Merge PR -- ^ The task to merge a PR, for example "merge https://github.com/smelc/spremuta/pull/12"
-  | Notify -- ^ Notify the user of something
+  | Notify -- ^ Notify the user of something: "notify"
   | SetReady PR -- ^ The task to undraft/set ready a PR, for example "setready https://github.com/smelc/spremuta/pull/12"
   deriving (Show)
 
-data TodoKind =
-    MergeKind
-  | SetReadyKind
-  deriving (Show, Bounded, Enum)
+-- data TodoKind =
+--     MergeKind
+--   | SetReadyKind
+--   deriving (Show, Bounded, Enum)
 
-allTodoKinds :: [TodoKind]
-allTodoKinds = [minBound .. maxBound]
+-- allTodoKinds :: [TodoKind]
+-- allTodoKinds = [minBound .. maxBound]
 
 -- | Some Boolean condition
 data Condition =
