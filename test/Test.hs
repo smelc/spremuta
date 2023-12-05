@@ -1,7 +1,3 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE TypeApplications    #-}
-
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module Main (main) where

@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE DuplicateRecordFields #-}
 
 -- | How to build requests to the GitHub API.
 -- This module is meant to be used qualified.

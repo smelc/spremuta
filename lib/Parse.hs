@@ -1,8 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE KindSignatures      #-}
-{-# LANGUAGE TypeApplications    #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Parse (
