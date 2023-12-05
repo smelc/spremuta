@@ -1,4 +1,5 @@
 module Types where
+import           Data.Maybe (fromMaybe)
 
 -- | A newtype wrapping the string provided by users
 newtype PRURL = PRURL String
@@ -25,14 +26,35 @@ vcss = [minBound .. maxBound]
 
 -- | A task: a single line in a spremuta.tasks file
 data Task = Task Todo Condition
-  deriving (Show)
+
+instance Show Task where
+  show (Task todo cond) =
+    show todo ++ when ++ fromMaybe  "" suffix
+    where
+      when =
+        case suffix of
+          Nothing -> ""
+          Just _  -> " when "
+      suffix =
+        case cond of
+          TrueCond      -> Nothing
+          IsMerged {}   -> Just $ show cond
+          HasGreenCI {} -> Just $ show cond
+
+
 
 -- | An effect that spremuta does on the world
 data Todo =
     Merge PR -- ^ The task to merge a PR, for example "merge https://github.com/smelc/spremuta/pull/12"
   | Notify -- ^ Notify the user of something: "notify"
   | SetReady PR -- ^ The task to undraft/set ready a PR, for example "setready https://github.com/smelc/spremuta/pull/12"
-  deriving (Show)
+
+instance Show Todo where
+  show =
+    \case
+      Merge pr -> "merge " ++ show pr
+      Notify -> "notifyme"
+      SetReady pr -> "setready " ++ show pr
 
 -- data TodoKind =
 --     MergeKind
@@ -47,4 +69,10 @@ data Condition =
     TrueCond
   | IsMerged PR
   | HasGreenCI PR
-  deriving (Show)
+
+instance Show Condition where
+  show =
+    \case
+      TrueCond -> "true"
+      IsMerged pr -> show pr ++ " ismerged"
+      HasGreenCI pr -> show pr ++ " hasgreenci"

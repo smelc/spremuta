@@ -25,13 +25,13 @@ runParser parser url =
 
 parseTasks :: Expectation
 parseTasks = do
-  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1"
+  runParser Parse.pTask "merge  https://github.com/smelc/spremuta/pull/1"
     `shouldSatisfy` isRight
   runParser Parse.pTask "merge https://github.com/too_short"
     `shouldSatisfy` isLeft
   runParser Parse.pTask "wrong https://github.com/smelc/spremuta/pull/1"
     `shouldSatisfy` isLeft
-  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when True"
+  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1   when  True"
     `shouldSatisfy` isRight
   runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 isready"
     `shouldSatisfy` isRight
