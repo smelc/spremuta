@@ -70,6 +70,9 @@ data Condition =
   | IsMerged PR
   | HasGreenCI PR
 
+-- | A kind for the cases of @Condition@ where the kind is useful
+data ConditionKind = IsMergedKind | HasGreenCIKind
+
 instance Show Condition where
   show =
     \case
