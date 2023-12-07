@@ -53,7 +53,7 @@ instance Show Todo where
   show =
     \case
       Merge pr -> "merge " ++ show pr
-      Notify -> "notifyme"
+      Notify -> "notify"
       SetReady pr -> "setready " ++ show pr
 
 -- data TodoKind =

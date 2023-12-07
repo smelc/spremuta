@@ -1,9 +1,11 @@
-{-# LANGUAGE DeriveGeneric        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | How to build requests to the GitHub API.
 -- This module is meant to be used qualified.
-module Request (getPR, GetPRResponse(..), VCSAPI(..)) where
+module Request (getPR, GetPRResponse(..), REST(..)) where
 
+import           Conduit                (MonadThrow)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Data.Aeson             (FromJSON, ToJSON)
 import           Data.Function          ((&))
@@ -14,7 +16,6 @@ import           Network.HTTP.Simple    (Request, addRequestHeader,
 import qualified Network.HTTP.Simple    as C
 import           Types                  (Condition (..), ConditionKind (..),
                                          PR (..), VCS (..))
-import Conduit (MonadThrow)
 
 data GetPRResponse = GetPRResponse {
     url    :: String,
@@ -51,14 +52,21 @@ setHeaders vcs req =
     agent = ("User-Agent", "HTTP-Conduit")
     req' = addHeader agent req
 
-class VCSAPI a where
-  evalCondition :: MonadIO m => a -> Condition -> m Bool
+class REST a b where
+  eval :: MonadIO m => a -> m b
 
-instance VCSAPI VCS where
-  evalCondition vcs cond =
-    case vcs of
-      GitHub -> evalGitHubCondition cond
-      GitLab -> error "GitLab unsupported in evalCondition"
+instance REST Condition Bool where
+   eval cond =
+    case cond of
+      TrueCond -> return True
+      IsMerged pr ->
+        case pr.vcs of
+          GitHub -> evalGitHubCondition cond
+          GitLab -> error "REST Condition Bool: GitLab not supported"
+      HasGreenCI pr ->
+        case pr.vcs of
+          GitHub -> evalGitHubCondition cond
+          GitLab -> error "REST Condition Bool: GitLab not supported"
 
 evalGitHubCondition :: MonadIO m => Condition -> m Bool
 evalGitHubCondition =
@@ -67,13 +75,13 @@ evalGitHubCondition =
     IsMerged pr -> liftIO $ go IsMergedKind pr
     HasGreenCI pr -> liftIO $ go HasGreenCIKind pr
   where
-    -- Can't make this MonadIO m => ... -> m Bool?
+    -- Can't make this MonadIO m => ... -> m Bool
     -- without introducing a newtype
     -- (see https://stackoverflow.com/questions/41751854/why-am-i-getting-overlapping-instances-error-when-one-doesnt-match)
     go :: ConditionKind -> PR -> IO Bool
     go _ck pr = do
-      req <- getPR pr
-      resp :: Request.GetPRResponse <- C.httpJSON req <&> C.getResponseBody
+      request <- getPR pr
+      resp :: Request.GetPRResponse <- C.httpJSON request <&> C.getResponseBody
       print resp
       return True
 
