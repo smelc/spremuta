@@ -29,10 +29,10 @@ parseTasks = do
     `shouldSatisfy` isLeft
   runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1   when  True"
     `shouldSatisfy` isRight
-  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 isready"
-    `shouldSatisfy` isRight
   runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 hasgreenci"
     `shouldSatisfy` isRight
+  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 hasgreenci"
+    `shouldSatisfyRight` (\t -> toConditionKind t == Just HasGreenCIKind)
 
 parseGitHubURLs :: Expectation
 parseGitHubURLs = do

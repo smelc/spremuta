@@ -70,8 +70,16 @@ data Condition =
   | IsMerged PR
   | HasGreenCI PR
 
+-- | The kind of a @Task@'s underlying condition, if any.
+toConditionKind :: Task -> Maybe ConditionKind
+toConditionKind =
+  \case Task _todo TrueCond -> Nothing
+        Task _todo (IsMerged _) -> Just IsMergedKind
+        Task _todo (HasGreenCI _) -> Just HasGreenCIKind
+
 -- | A kind for the cases of @Condition@ where the kind is useful
 data ConditionKind = IsMergedKind | HasGreenCIKind
+  deriving Eq
 
 instance Show Condition where
   show =
