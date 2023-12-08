@@ -27,6 +27,8 @@ parseTasks = do
     `shouldSatisfy` isLeft
   runParser Parse.pTask "wrong https://github.com/smelc/spremuta/pull/1"
     `shouldSatisfy` isLeft
+  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when garbage"
+    `shouldSatisfy` isLeft
   runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1   when  True"
     `shouldSatisfy` isRight
   runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 hasgreenci"

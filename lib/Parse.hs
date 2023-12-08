@@ -20,7 +20,6 @@ import           Data.Either.Extra    (mapLeft)
 import           Data.Function        ((&))
 import           Data.Functor         (($>))
 import           Data.List.Extra      (isInfixOf)
-import           Data.Maybe           (fromMaybe)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
@@ -53,8 +52,18 @@ pPR = go parsers
 pTask :: Parser Task
 pTask = do
    todo <- pTodo
-   condition <- optional pCondition
-   return $ Task todo (fromMaybe TrueCond condition)
+   condition <- end <|> cond
+   return $ Task todo condition
+   where
+     end :: Parser Condition = do
+      eof
+      return TrueCond
+     cond :: Parser Condition = do
+      hspace1
+      void $ string "when"
+      hspace1
+      pCondition
+
 
 pTodo :: Parser Todo
 pTodo = choice [ pMerge, pNotify, pSetReady ]
@@ -72,19 +81,14 @@ pTodo = choice [ pMerge, pNotify, pSetReady ]
       SetReady <$> pPR
 
 pCondition :: Parser Condition
-pCondition = choice [pTrueCond, pIsMerged, pHasGreenCI]
+pCondition = choice [pTrue, pNotTrue]
   where
-    pTrueCond = string "True" $> TrueCond
-    pIsMerged = do
+    pTrue = string "True" $> TrueCond
+    pNotTrue = do
       pr <- pPR
       hspace1
-      void $ string "ismerged"
-      return $ IsMerged pr
-    pHasGreenCI = do
-      pr <- pPR
-      hspace1
-      void $ string "hasgreenci"
-      return $ HasGreenCI pr
+      s <- string "ismerged" <|> string "hasgreenci"
+      return $ case s of "ismerged" -> IsMerged pr; _ -> HasGreenCI pr
 
 pProtocol :: Parser String
 pProtocol = choice
