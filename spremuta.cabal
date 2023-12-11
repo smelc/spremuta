@@ -22,8 +22,10 @@ common common-all
                      , extra
                      , http-conduit
                      , megaparsec
+		             , mtl
      hs-source-dirs:   lib
-     other-modules:    Parse
+     other-modules:    Exception
+                     , Parse
                      , Request
                      , Types
      ghc-options:      -Wall
@@ -33,6 +35,7 @@ common common-all
                        -Wwarn=missing-home-modules
     default-extensions: DataKinds
                         DuplicateRecordFields
+                        GADTs
                         NamedFieldPuns
                         LambdaCase
                         OverloadedRecordDot
