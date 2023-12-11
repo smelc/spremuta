@@ -16,7 +16,7 @@ data T = T {
 } deriving Show
 
 data Command =
-  TaskCmd Task
+  TaskCmd !Task
   deriving Show
 
 optsParser :: ParserInfo T
