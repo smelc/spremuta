@@ -1,0 +1,20 @@
+name: lint
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for disabled warnings pragmas
+        run: |
+          for warning in -Wno-unused-imports -Wno-unused-top-binds
+          do
+            ! git grep "{-# OPTIONS_GHC $warning #-}"
+          done

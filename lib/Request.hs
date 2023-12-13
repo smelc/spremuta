@@ -5,18 +5,24 @@
 -- This module is meant to be used qualified.
 module Request (getPR, GetPRBody(..), REST(..)) where
 
-import           Conduit                (MonadThrow)
-import           Control.Exception      (throw)
+import           Conduit                  (MonadThrow)
+import           Control.Exception        (throw)
 import           Control.Monad.Except
-import           Data.Aeson             (FromJSON, ToJSON)
-import           Data.Function          ((&))
-import           Exception              (SpremutaException (..))
+import           Data.Aeson               (FromJSON, ToJSON)
+import qualified Data.Aeson               as Aeson
+import qualified Data.Aeson.Encode.Pretty as Aeson
+import qualified Data.ByteString.Lazy     as LBS
+import           Data.Function            ((&))
+import           Data.Maybe               (fromJust)
+import qualified Data.Text.Lazy           as T
+import qualified Data.Text.Lazy.Encoding  as T
+import           Exception                (SpremutaException (..))
 import           GHC.Generics
-import           Network.HTTP.Simple    (Request, addRequestHeader,
-                                         parseRequest)
-import qualified Network.HTTP.Simple    as C
-import           Types                  (Condition (..), ConditionKind (..),
-                                         PR (..), VCS (..))
+import           Network.HTTP.Simple      (Request, addRequestHeader,
+                                           parseRequest)
+import qualified Network.HTTP.Simple      as C
+import           Types                    (Condition (..), ConditionKind (..),
+                                           PR (..), VCS (..))
 
 data GetPRBody = GetPRBody {
     url    :: String,
@@ -69,14 +75,14 @@ instance REST Condition Bool where
           GitHub -> evalGitHubCondition cond
           GitLab -> error "REST Condition Bool: GitLab not supported"
 
--- | Throw a 'SpremutaException' if the status is not 200. Handle some codes
+-- | Throws a 'SpremutaException' if the status is not 200. Handle some codes
 -- in a special way.
-handleStatus :: (Show a, Monad m) => String -> C.Request -> C.Response a -> m ()
-handleStatus what req response =
+handleStatus :: (Show a, Monad m) => C.Request -> C.Response a -> m ()
+handleStatus req response =
   case C.getResponseStatusCode response of
     200 -> return ()
-    403 -> throw $ Response404 req response ("Access forbidden to " <> what)
-    404 -> throw $ Response404 req response (what <> " not found ")
+    403 -> throw $ Request403 req
+    404 -> throw $ Request404 req
     _   -> throw $ ResponseKO req response
 
 evalGitHubCondition :: MonadIO m => Condition -> m Bool
@@ -92,12 +98,12 @@ evalGitHubCondition =
     go :: ConditionKind -> PR -> IO Bool
     go _ck pr = do
       request <- getPR pr
-      response :: C.Response Request.GetPRBody <- C.httpJSON request
-      handleStatus ("PR " <> show pr) request response
-      undefined
-      -- let body :: Request.GetPRBody = C.getResponseBody response
-      -- print body
-      -- return True
-
--- instance (Monad m, MonadIO m) => MonadThrow m where
---   throwM = liftIO . throwIO
+      response :: C.Response LBS.ByteString <- C.httpLBS request
+      handleStatus request response
+      let bodyBS :: LBS.ByteString = C.getResponseBody response
+          errOrBody:: Either String Request.GetPRBody = Aeson.eitherDecode bodyBS
+          body = case errOrBody of Left err -> throw (BadBody request err); Right b -> b
+          value :: Aeson.Value = seq body (Aeson.decode bodyBS) & fromJust
+      print body
+      liftIO $ putStrLn $ T.unpack $ T.decodeUtf8 $ Aeson.encodePretty value
+      return True
