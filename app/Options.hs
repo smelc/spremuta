@@ -45,4 +45,3 @@ taskCommand =
   where
     taskReader :: ReadM Task =
       eitherReader (first MP.errorBundlePretty .  MP.runParser Parse.pTask "")
-

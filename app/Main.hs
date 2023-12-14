@@ -16,6 +16,3 @@ main = do
   result :: Bool <- Request.eval cond
   print result
   return ()
-  -- req <- Request.getPR bits
-  -- resp :: Request.GetPRResponse <- httpJSON req <&> C.getResponseBody
-  -- print resp

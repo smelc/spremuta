@@ -14,13 +14,15 @@ import qualified Data.Aeson.Encode.Pretty as Aeson
 import qualified Data.ByteString.Lazy     as LBS
 import           Data.Function            ((&))
 import           Data.Maybe               (fromJust)
-import qualified Data.Text.Lazy           as T
-import qualified Data.Text.Lazy.Encoding  as T
+import qualified Data.Text.Lazy           as TL
+import qualified Data.Text.Lazy.Encoding  as TL
 import           Exception                (SpremutaException (..))
 import           GHC.Generics
+import           Log
 import           Network.HTTP.Simple      (Request, addRequestHeader,
                                            parseRequest)
 import qualified Network.HTTP.Simple      as C
+import           Prelude                  hiding (log)
 import           Types                    (Condition (..), ConditionKind (..),
                                            PR (..), VCS (..))
 
@@ -60,18 +62,17 @@ setHeaders vcs req =
     req' = addHeader agent req
 
 class REST a b where
-  eval :: MonadIO m => a -> m b
+  eval :: (MonadIO m, MonadLogger m) => a -> m b
 
 instance REST Condition Bool where
    eval cond =
     case cond of
-      TrueCond -> return True
-      IsMerged pr ->
-        case pr.vcs of
-          GitHub -> evalGitHubCondition cond
-          GitLab -> error "REST Condition Bool: GitLab not supported"
-      HasGreenCI pr ->
-        case pr.vcs of
+      TrueCond      -> return True
+      IsMerged pr   -> go pr.vcs cond
+      HasGreenCI pr -> go pr.vcs cond
+    where
+      go vcs cond =
+        case vcs of
           GitHub -> evalGitHubCondition cond
           GitLab -> error "REST Condition Bool: GitLab not supported"
 
@@ -85,25 +86,22 @@ handleStatus req response =
     404 -> throw $ Request404 req
     _   -> throw $ ResponseKO req response
 
-evalGitHubCondition :: MonadIO m => Condition -> m Bool
+evalGitHubCondition :: (MonadIO m, MonadLogger m) => Condition -> m Bool
 evalGitHubCondition =
   \case
     TrueCond -> return True
-    IsMerged pr -> liftIO $ go IsMergedKind pr
-    HasGreenCI pr -> liftIO $ go HasGreenCIKind pr
+    IsMerged pr -> go IsMergedKind pr
+    HasGreenCI pr -> go HasGreenCIKind pr
   where
-    -- Can't make this MonadIO m => ... -> m Bool
-    -- without introducing a newtype
-    -- (see https://stackoverflow.com/questions/41751854/why-am-i-getting-overlapping-instances-error-when-one-doesnt-match)
-    go :: ConditionKind -> PR -> IO Bool
+    go :: (MonadIO m, MonadLogger m) => ConditionKind -> PR -> m Bool
     go _ck pr = do
-      request <- getPR pr
+      request <- liftIO $ getPR pr
       response :: C.Response LBS.ByteString <- C.httpLBS request
       handleStatus request response
       let bodyBS :: LBS.ByteString = C.getResponseBody response
           errOrBody:: Either String Request.GetPRBody = Aeson.eitherDecode bodyBS
           body = case errOrBody of Left err -> throw (BadBody request err); Right b -> b
           value :: Aeson.Value = seq body (Aeson.decode bodyBS) & fromJust
-      print body
-      liftIO $ putStrLn $ T.unpack $ T.decodeUtf8 $ Aeson.encodePretty value
+      liftIO $ print body
+      verbose $ TL.unpack $ TL.decodeUtf8 $ Aeson.encodePretty value
       return True

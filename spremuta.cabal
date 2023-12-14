@@ -28,6 +28,7 @@ common common-all
                      , text
      hs-source-dirs:   lib
      other-modules:    Exception
+                     , Log
                      , Parse
                      , Request
                      , Types
