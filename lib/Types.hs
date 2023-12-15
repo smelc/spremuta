@@ -37,8 +37,6 @@ instance Show Task where
           IsMerged {}   -> Just $ show cond
           HasGreenCI {} -> Just $ show cond
 
-
-
 -- | An effect that spremuta does on the world
 data Todo =
     Merge PR -- ^ The task to merge a PR, for example "merge https://github.com/smelc/spremuta/pull/12"

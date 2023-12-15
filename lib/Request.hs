@@ -5,7 +5,7 @@
 module Request (getPR, REST(..)) where
 
 import           Conduit                  (MonadThrow)
-import           Control.Exception        (throw)
+import           Control.Exception.Base   (throwIO)
 import           Control.Monad.Except
 import qualified Data.Aeson               as Aeson
 import qualified Data.Aeson.Encode.Pretty as Aeson
@@ -21,8 +21,7 @@ import           Network.HTTP.Simple      (Request, addRequestHeader,
 import qualified Network.HTTP.Simple      as C
 import           Prelude                  hiding (log)
 import           Types                    (Condition (..), ConditionKind (..),
-                                           GitHubPR (..), PR (..),
-                                           VCS (..))
+                                           GitHubPR (..), PR (..), VCS (..))
 
 -- | https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
 getPR :: MonadThrow m => PR -> m Request
@@ -66,13 +65,13 @@ instance REST Condition Bool where
 
 -- | Throws a 'SpremutaException' if the status is not 200. Handle some codes
 -- in a special way.
-handleStatus :: (Show a, Monad m) => C.Request -> C.Response a -> m ()
+handleStatus :: (Show a, MonadIO m) => C.Request -> C.Response a -> m ()
 handleStatus req response =
   case C.getResponseStatusCode response of
     200 -> return ()
-    403 -> throw $ Request403 req
-    404 -> throw $ Request404 req
-    _   -> throw $ ResponseKO req response
+    403 -> liftIO $ throwIO $ Request403 req
+    404 -> liftIO $ throwIO $ Request404 req
+    _   -> liftIO $ throwIO $ ResponseKO req response
 
 evalGitHubCondition :: (MonadIO m, MonadLogger m) => Condition -> m Bool
 evalGitHubCondition =
@@ -88,8 +87,8 @@ evalGitHubCondition =
       handleStatus request response
       let bodyBS :: LBS.ByteString = C.getResponseBody response
           errOrBody:: Either String GitHubPR = Aeson.eitherDecode bodyBS
-          body :: GitHubPR = case errOrBody of Left err -> throw (BadBody request err); Right b -> b
-          value :: Aeson.Value = seq body (Aeson.decode bodyBS) & fromJust
+      body <- case errOrBody of Left err -> liftIO $ throwIO (BadBody request err); Right b -> pure b
+      let value :: Aeson.Value = seq body (Aeson.decode bodyBS) & fromJust
       verbose $ show body
       debug $ TL.unpack $ TL.decodeUtf8 $ Aeson.encodePretty value
       case cond of
