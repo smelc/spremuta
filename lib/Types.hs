@@ -10,15 +10,6 @@ import           GHC.Generics (Generic)
 newtype PRURL = PRURL String
   deriving (Show)
 
--- | Components that matter to call the GitHub API on the pull request
--- URL provided by the user.
-data PR = PR {
-  owner  :: String,
-  repo   :: String,
-  number :: Int,
-  vcs    :: VCS
-} deriving (Show)
-
 -- | Enumeration of the supported version control systems
 data VCS =
   GitHub
@@ -93,6 +84,19 @@ instance Show Condition where
       IsMerged pr -> show pr ++ " ismerged"
       HasGreenCI pr -> show pr ++ " hasgreenci"
 
+-- * VCS agnostic types
+--
+-- Types used in all backends
+
+-- | Components that matter to call the REST API on the pull request
+-- URL provided by the user. This type is VCS-agnostic.
+data PR = PR {
+  owner  :: String,
+  repo   :: String,
+  number :: Int,
+  vcs    :: VCS
+} deriving (Show)
+
 -- * GitHub types
 --
 -- Types that are specific to GitHub
@@ -113,11 +117,11 @@ instance FromJSON GitHubPR where
 -- | The type obtained after deserializing a request to
 -- https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28
 data GitHubRepo = GitHubRepo {
-    url  :: String -- | The URL of the repo, in REST terms, e.g. "https://api.github.com/repos/input-output-hk/cardano-cli"
+    url   :: String -- | The URL of the repo, in REST terms, e.g. "https://api.github.com/repos/input-output-hk/cardano-cli"
     -- | The owner of the repo, e.g. "input-output-hk"
   , login :: String
     -- | The name of the repo, e.g. "cardano-cli"
-  , name :: String
+  , name  :: String
 } deriving (Generic, Show)
 
 instance ToJSON GitHubRepo where

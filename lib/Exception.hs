@@ -17,19 +17,19 @@ instance Show SpremutaException where
   show =
     \case
       BadBody    req err ->
-        "When performing request: " <> show req <> ",\n"
-          <> "could not parse body: " <> err <> " 🙁"
+        "When performing request: " <> show req
+          <> "Could not parse body: " <> err <> " 🙁"
       Request404 req -> go req 404
       Request403 req -> go req 403
       ResponseKO req response -> go2 req response
     where
       go :: C.Request -> Int -> String
       go req code =
-        "When performing request: " <> show req <> ",\n"
+        "When performing request: " <> show req
           <> "received code " <> show code <> ", whereas 200 (OK) was expected 🙁"
       go2 :: Show a => C.Request -> C.Response a -> String
       go2 (req :: C.Request) (response :: C.Response a) =
-        "When performing request: " <> show req <> "\n"
+        "When performing request: " <> show req
           <> "got response:" <> show response <> "\n"
           <> "and code is " <> show (C.getResponseStatusCode response) <> ", whereas 200 (OK) was expected 🙁"
 
