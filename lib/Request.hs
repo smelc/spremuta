@@ -1,14 +1,12 @@
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | How to build requests to the GitHub API.
 -- This module is meant to be used qualified.
-module Request (getPR, GetPRBody(..), REST(..)) where
+module Request (getPR, REST(..)) where
 
 import           Conduit                  (MonadThrow)
 import           Control.Exception        (throw)
 import           Control.Monad.Except
-import           Data.Aeson               (FromJSON, ToJSON)
 import qualified Data.Aeson               as Aeson
 import qualified Data.Aeson.Encode.Pretty as Aeson
 import qualified Data.ByteString.Lazy     as LBS
@@ -17,24 +15,14 @@ import           Data.Maybe               (fromJust)
 import qualified Data.Text.Lazy           as TL
 import qualified Data.Text.Lazy.Encoding  as TL
 import           Exception                (SpremutaException (..))
-import           GHC.Generics
 import           Log
 import           Network.HTTP.Simple      (Request, addRequestHeader,
                                            parseRequest)
 import qualified Network.HTTP.Simple      as C
 import           Prelude                  hiding (log)
 import           Types                    (Condition (..), ConditionKind (..),
-                                           PR (..), VCS (..))
-
-data GetPRBody = GetPRBody {
-    url    :: String,
-    number :: Int,
-    state  :: String
-  } deriving (Generic, Show)
-
-instance ToJSON GetPRBody where
-
-instance FromJSON GetPRBody where
+                                           GitHubPR (..), PR (..),
+                                           VCS (..))
 
 -- | https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
 getPR :: MonadThrow m => PR -> m Request
@@ -94,14 +82,19 @@ evalGitHubCondition =
     HasGreenCI pr -> go HasGreenCIKind pr
   where
     go :: (MonadIO m, MonadLogger m) => ConditionKind -> PR -> m Bool
-    go _ck pr = do
+    go cond pr = do
       request <- liftIO $ getPR pr
       response :: C.Response LBS.ByteString <- C.httpLBS request
       handleStatus request response
       let bodyBS :: LBS.ByteString = C.getResponseBody response
-          errOrBody:: Either String Request.GetPRBody = Aeson.eitherDecode bodyBS
-          body = case errOrBody of Left err -> throw (BadBody request err); Right b -> b
+          errOrBody:: Either String GitHubPR = Aeson.eitherDecode bodyBS
+          body :: GitHubPR = case errOrBody of Left err -> throw (BadBody request err); Right b -> b
           value :: Aeson.Value = seq body (Aeson.decode bodyBS) & fromJust
-      liftIO $ print body
-      verbose $ TL.unpack $ TL.decodeUtf8 $ Aeson.encodePretty value
-      return True
+      verbose $ show body
+      debug $ TL.unpack $ TL.decodeUtf8 $ Aeson.encodePretty value
+      case cond of
+        IsMergedKind ->
+          return body.merged
+        HasGreenCIKind ->
+          -- TODO
+          return True

@@ -23,3 +23,9 @@ class MonadIO m => MonadLogger m where
     when ("--debug" `elem` args || "--verbose" `elem` args) (log s)
 
 instance MonadLogger IO
+
+data LogLevel =
+    Info
+  | Verbose
+  | Debug
+  deriving Show

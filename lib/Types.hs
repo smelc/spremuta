@@ -1,5 +1,10 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Types where
-import           Data.Maybe (fromMaybe)
+
+import           Data.Aeson   (FromJSON, ToJSON)
+import           Data.Maybe   (fromMaybe)
+import           GHC.Generics (Generic)
 
 -- | A newtype wrapping the string provided by users
 newtype PRURL = PRURL String
@@ -87,3 +92,34 @@ instance Show Condition where
       TrueCond -> "true"
       IsMerged pr -> show pr ++ " ismerged"
       HasGreenCI pr -> show pr ++ " hasgreenci"
+
+-- * GitHub types
+--
+-- Types that are specific to GitHub
+
+-- | The type obtained after deserializing a request to
+-- https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28
+data GitHubPR = GitHubPR {
+    url    :: String
+  , merged :: Bool
+  , number :: Int
+  , state  :: String
+} deriving (Generic, Show)
+
+instance ToJSON GitHubPR where
+
+instance FromJSON GitHubPR where
+
+-- | The type obtained after deserializing a request to
+-- https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28
+data GitHubRepo = GitHubRepo {
+    url  :: String -- | The URL of the repo, in REST terms, e.g. "https://api.github.com/repos/input-output-hk/cardano-cli"
+    -- | The owner of the repo, e.g. "input-output-hk"
+  , login :: String
+    -- | The name of the repo, e.g. "cardano-cli"
+  , name :: String
+} deriving (Generic, Show)
+
+instance ToJSON GitHubRepo where
+
+instance FromJSON GitHubRepo where

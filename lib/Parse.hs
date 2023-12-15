@@ -28,6 +28,8 @@ import           Text.Megaparsec.Char
 type Parser = Parsec String String {- error type, input type -}
 
 class VCSParser (vcs :: VCS) where
+  -- | A parser, which given a PR public URL (for example "https://github.com/input-output-hk/cardano-cli/pull/522"),
+  -- returns the information regarding the different segments of the PR.
   parser :: Parser PR
 
 instance ShowErrorComponent String where
