@@ -107,6 +107,7 @@ data GitHubPR = GitHubPR {
     url    :: String
   , merged :: Bool
   , number :: Int
+  , repo   :: GitHubRepo
   , state  :: String
 } deriving (Generic, Show)
 
