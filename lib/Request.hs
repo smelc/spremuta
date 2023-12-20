@@ -87,7 +87,12 @@ evalGitHubCondition =
       handleStatus request response
       let bodyBS :: LBS.ByteString = C.getResponseBody response
           errOrBody:: Either String GitHubPR = Aeson.eitherDecode bodyBS
-      body <- case errOrBody of Left err -> liftIO $ throwIO (BadBody request err); Right b -> pure b
+      body <-
+        case errOrBody of
+          Left err -> do
+            debug $ TL.unpack $ TL.decodeUtf8 bodyBS
+            liftIO $ throwIO (BadBody request err)
+          Right b -> pure b
       let value :: Aeson.Value = seq body (Aeson.decode bodyBS) & fromJust
       verbose $ show body
       debug $ TL.unpack $ TL.decodeUtf8 $ Aeson.encodePretty value

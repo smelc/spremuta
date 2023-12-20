@@ -21,5 +21,4 @@ main = do
 
 handler :: SpremutaException -> IO a
 handler e = do
-  putStrLn "handler"
   die $ "💣 " ++ show e
