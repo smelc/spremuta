@@ -102,10 +102,10 @@ data PR = PR {
 -- | The type obtained after deserializing a request to
 -- https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28
 data GitHubPR = GitHubPR {
-    url    :: String
+    head   :: GitHubRev
+  , url    :: String
   , merged :: Bool
   , number :: Int
-  , repo   :: GitHubRepo
   , state  :: String
 } deriving (Generic, Show)
 
@@ -113,16 +113,38 @@ instance ToJSON GitHubPR where
 
 instance FromJSON GitHubPR where
 
+data GitHubRev = GitHubRev {
+    sha  :: String
+  , repo :: GitHubRepo
+} deriving (Generic, Show)
+
+instance ToJSON GitHubRev where
+
+instance FromJSON GitHubRev where
+
 -- | The type obtained after deserializing a request to
 -- https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28
 data GitHubRepo = GitHubRepo {
-    url   :: String -- | The URL of the repo, in REST terms, e.g. "https://api.github.com/repos/input-output-hk/cardano-cli"
-    -- | The owner of the repo, e.g. "input-output-hk"
-  , login :: String
+    -- | "main"
+    default_branch :: String
+    -- | For example "https://github.com/IntersectMBO"
+  , html_url       :: String
+  , owner          :: GitHubOwner
     -- | The name of the repo, e.g. "cardano-cli"
-  , name  :: String
+  , name           :: String
 } deriving (Generic, Show)
 
 instance ToJSON GitHubRepo where
 
 instance FromJSON GitHubRepo where
+
+data GitHubOwner = GitHubOwner {
+    -- | The name of the repo, e.g. "cardano-cli"
+    login    :: String
+    -- | For example "https://github.com/IntersectMBO"
+  , html_url :: String
+} deriving (Generic, Show)
+
+instance ToJSON GitHubOwner where
+
+instance FromJSON GitHubOwner where
