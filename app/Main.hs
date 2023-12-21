@@ -2,6 +2,7 @@ module Main where
 
 import           Control.Exception   (catch)
 import           Exception           (SpremutaException)
+import           Options             (Options (..))
 import qualified Options
 import qualified Options.Applicative as O
 import qualified Request
@@ -13,7 +14,7 @@ emojiDie msg = die $ "❌ " ++ msg
 
 main :: IO ()
 main = do
-  Options.T {command} <- O.execParser Options.optsParser
+  Options {command} <- O.execParser Options.optsParser
   let Task _todo cond = case command of Options.TaskCmd t -> t
   result :: Bool <- Request.eval cond `catch` handler
   print result

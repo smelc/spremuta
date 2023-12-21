@@ -11,9 +11,9 @@ import           Types
 
 {- HLINT ignore "Use newtype instead of data" -}
 
--- | The type of options. To be meant to be used qualified.
--- If adding new options, you probably want to extend this datatype.
-data T = T {
+-- | The type of options. If adding new options,
+-- you probably want to extend this datatype.
+data Options = Options {
     command  :: !Command
   , -- | Note that 'logLevel' is unused in the code, because we implement
     -- verbosity levels in a hacky way in 'Request'. The parser in this file
@@ -25,7 +25,7 @@ data Command =
   TaskCmd !Task
   deriving Show
 
-optsParser :: ParserInfo T
+optsParser :: ParserInfo Options
 optsParser =
   info
     (helper <*> versionOption <*> programOptions)
@@ -41,9 +41,9 @@ programDescription =
    "\"spremuta daemon\" that continuously reads tasks from the spremuta.tasks file."]
 
 -- | If adding new options, this is probably where you should modify code
-programOptions :: Parser T
+programOptions :: Parser Options
 programOptions =
-   flip T
+   flip Options
      <$> verbosity
      <*> hsubparser taskCommand
 
