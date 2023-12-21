@@ -79,7 +79,7 @@ Test-Suite iotest
     import:           common-all
     type:             exitcode-stdio-1.0
     main-is:          IOTest.hs
-    hs-source-dirs:   lib
-                    , iotest
+    hs-source-dirs:   iotest
     other-modules:
-    build-depends:
+    build-depends:    hspec
+                    , MissingH
