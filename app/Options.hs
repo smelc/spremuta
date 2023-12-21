@@ -6,19 +6,24 @@ import qualified Log
 import           Options.Applicative
 import qualified Options.Applicative as O
 import qualified Parse
+import qualified System.Info         as S
 import qualified Text.Megaparsec     as MP
 import           Types
 
 {- HLINT ignore "Use newtype instead of data" -}
 
 -- | The type of options. If adding new options,
--- you probably want to extend this datatype.
+-- you probably want to extend this datatype. It's important that the
+-- options that are common to all commands come first in this datatype.
+-- It simplifies building the parser (see 'programOptions' below)
 data Options = Options {
-    command  :: !Command
-  , -- | Note that 'logLevel' is unused in the code, because we implement
+    -- | Note that 'logLevel' is unused in the code, because we implement
     -- verbosity levels in a hacky way in 'Request'. The parser in this file
     -- is only to document the flags to the user.
-    logLevel :: !Log.LogLevel
+    logLevel  :: !Log.LogLevel
+  , -- | The command to call when notifying the user
+    notifyCmd :: Maybe [String]
+  , command   :: !Command
 } deriving Show
 
 data Command =
@@ -43,9 +48,26 @@ programDescription =
 -- | If adding new options, this is probably where you should modify code
 programOptions :: Parser Options
 programOptions =
-   flip Options
+   fmap setDefaultNotify $ Options
      <$> verbosity
+     <*> optional notify
      <*> hsubparser taskCommand
+
+setDefaultNotify :: Options -> Options
+setDefaultNotify o@Options {notifyCmd} =
+  case notifyCmd of
+    Just _  -> o -- Leave what was set by parser
+    Nothing -> o {notifyCmd = defaultNotify}
+   where
+     defaultNotify :: Maybe [String]
+     defaultNotify =
+       -- See https://hackage.haskell.org/package/base-4.19.0.0/docs/System-Info.html
+       -- For possible values of S.os
+       case S.os of
+         "linux" -> Just ["notify-send"]
+         -- To default to a command on an OS, that's where to contribute:
+         -- "otherOS" -> Just ["some_command", "--with-some-flag"]
+         _       -> Nothing
 
 verbosity :: Parser Log.LogLevel
 verbosity = asum [verbose, debug]
@@ -56,6 +78,13 @@ verbosity = asum [verbose, debug]
     debug =
       O.flag Log.Info Log.Debug $ mconcat
        [O.long "debug", O.help "Output a maximum logs. Useful for developers."]
+
+notify :: Parser [String]
+notify =
+  fmap words $ O.strOption $ mconcat
+    [O.long "notify",
+     O.help "Command to execute to notify the user (split on spaces). Defaults to \"notify-send\" on Linux. On other OSes, write to stdout (feel free to contribute to improve that by changing 'setDefaultNotify' in Options.hs)."
+    ]
 
 taskCommand :: Mod CommandFields Command
 taskCommand =
