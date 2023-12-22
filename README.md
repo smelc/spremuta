@@ -14,7 +14,8 @@ ghcup install cabal --isolate $(pwd)/bin/cabal
 ghcup install ghc 9.4.7 --isolate $(pwd)/bin/ghc
 ```
 
-Install `ormolu` version `0.7.3.0`:
+Install `ormolu` version `0.7.3.0` (⚠️ version number also mentioned in
+[.github/workflows/lint.yml](./github/workflows/lint.yml) ⚠️ ):
 
 ```shell
 wget https://github.com/tweag/ormolu/releases/download/0.7.3.0/ormolu-Linux.zip -O ormolu.zip

@@ -18,3 +18,8 @@ jobs:
           do
             ! git grep "{-# OPTIONS_GHC $warning #-}"
           done
+
+      - name: Check Haskell files formatting with Ormolu
+        uses: haskell-actions/run-ormolu@v14
+        with:
+          version: "0.7.3.0"

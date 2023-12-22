@@ -43,7 +43,7 @@ programDescription =
   intercalate "\n"
   ["spremuta runs in two modes:",
    "\"spremuta task TASK\" runs the given task and exits immediately.",
-   "\"spremuta daemon\" that continuously reads tasks from the spremuta.tasks file."]
+   "\"spremuta daemon\" continuously reads tasks from the spremuta.tasks file."]
 
 -- | If adding new options, this is probably where you should modify code
 programOptions :: Parser Options
@@ -77,13 +77,13 @@ verbosity = asum [verbose, debug]
        [O.long "verbose", O.help "Output more logs. Useful for creating detailed issues. Use --debug for even more logs."]
     debug =
       O.flag Log.Info Log.Debug $ mconcat
-       [O.long "debug", O.help "Output a maximum logs. Useful for developers."]
+       [O.long "debug", O.help "Output a maximum number of logs. Useful for developers."]
 
 notify :: Parser [String]
 notify =
   fmap words $ O.strOption $ mconcat
     [O.long "notify",
-     O.help "Command to execute to notify the user (split on spaces). Defaults to \"notify-send\" on Linux. On other OSes, write to stdout (feel free to contribute to improve that by changing 'setDefaultNotify' in Options.hs)."
+     O.help "Command to execute to notify the user (split on spaces). Defaults to \"notify-send\" on Linux. On other OSes, write to stdout (feel free to enhance that by modifying 'setDefaultNotify' in Options.hs)."
     ]
 
 taskCommand :: Mod CommandFields Command
