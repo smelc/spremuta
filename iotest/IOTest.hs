@@ -2,7 +2,6 @@ module Main where -- !!!module name different from filename!!! (for 'cabal test'
 
 import           System.Exit
 
-import           Data.List
 import           Data.String.Utils
 import           System.Process.Extra (readProcessWithExitCode)
 import           Test.Hspec
@@ -15,7 +14,7 @@ assertSpremutaOK callArgs = do
     ExitFailure _ -> do
       logHandle "✅ stdout" $ strip stdout
       logHandle "❌ stderr" $ strip stderr
-      expectationFailure $ "🙁 Success was expected, but command failed with exit code " ++ show ec ++ ":\n" ++ intercalate " " args
+      expectationFailure $ "🙁 Success was expected, but command failed with exit code " ++ show ec ++ ":\n" ++ unwords (program : args)
   where
     program = "cabal"
     args = ["run", "spremuta", "--"] ++ callArgs
@@ -28,4 +27,4 @@ main :: IO ()
 main = hspec $ do
   describe "test" $ do
     it "task" $
-      assertSpremutaOK ["task", "notify when https://github.com/input-output-hk/cardano-cli/pull/513 ismerged"]
+      assertSpremutaOK ["task", "notify when https://github.com/IntersectMBO/cardano-cli/pull/513 ismerged"]

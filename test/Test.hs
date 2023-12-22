@@ -1,10 +1,14 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module Main (main) where
+
+import           Control.Monad
 import           Data.Either
+import           GHC.IO.Exception     (ExitCode (ExitSuccess))
 import qualified Parse
+import           System.Process.Extra (readProcessWithExitCode)
 import           Test.Hspec
-import qualified Text.Megaparsec as MP
+import qualified Text.Megaparsec      as MP
 import           Types
 
 -- | @shouldSatisfyRight (Left _) _@ fails. @shouldSatisfyRight (Right x) f@
@@ -54,8 +58,21 @@ parseGitLabURLs = do
   runParser (Parse.parser @'GitLab) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
     `shouldSatisfy` isLeft
 
+goldenHelp :: Expectation
+goldenHelp = do
+  (ec, stdout, _stderr) <- readProcessWithExitCode program args ""
+  when (ec /= ExitSuccess) (expectationFailure $ unwords args <> " failed with exit code " <> show ec <> ", whereas a success was expected")
+  golden <- readFile "test/golden/help.txt"
+  stdout `shouldBe` golden
+  where
+    program = "cabal"
+    -- --verbose=0 avoids printing "Up to date"
+    args = ["--verbose=0", "run", "spremuta", "--", "--help"]
+
 main :: IO ()
 main = hspec $ do
+  describe "golden" $ do
+    it "top-level help" goldenHelp
   describe "parse URL" $ do
     it "GitHub" parseGitHubURLs
     it "GitLab" parseGitLabURLs

@@ -1,0 +1,20 @@
+Usage: spremuta [--version] [--verbose | --debug] [--notify ARG] COMMAND
+
+  spremuta runs in two modes: "spremuta task TASK" runs the given task and exits
+  immediately. "spremuta daemon" continuously reads tasks from the
+  spremuta.tasks file.
+
+Available options:
+  -h,--help                Show this help text
+  --version                Show version
+  --verbose                Output more logs. Useful for creating detailed
+                           issues. Use --debug for even more logs.
+  --debug                  Output a maximum number of logs. Useful for
+                           developers.
+  --notify ARG             Command to execute to notify the user (split on
+                           spaces). Defaults to "notify-send" on Linux. On other
+                           OSes, write to stdout (feel free to enhance that by
+                           modifying 'setDefaultNotify' in Options.hs).
+
+Available commands:
+  task                     
