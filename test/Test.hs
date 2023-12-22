@@ -2,18 +2,18 @@
 
 module Main (main) where
 
-import           Control.Monad
-import           Data.Either
-import           GHC.IO.Exception     (ExitCode (ExitSuccess))
+import Control.Monad
+import Data.Either
+import GHC.IO.Exception (ExitCode (ExitSuccess))
 import qualified Parse
-import           System.Process.Extra (readProcessWithExitCode)
-import           Test.Hspec
-import qualified Text.Megaparsec      as MP
-import           Types
+import System.Process.Extra (readProcessWithExitCode)
+import Test.Hspec
+import qualified Text.Megaparsec as MP
+import Types
 
 -- | @shouldSatisfyRight (Left _) _@ fails. @shouldSatisfyRight (Right x) f@
 -- succeeds if @f x@ holds.
-shouldSatisfyRight :: Show a => Show b => Either a b -> (b -> Bool) -> Expectation
+shouldSatisfyRight :: (Show a) => (Show b) => Either a b -> (b -> Bool) -> Expectation
 shouldSatisfyRight (Left a) _ = expectationFailure $ "Expected Right, got (Left " ++ show a ++ ")"
 shouldSatisfyRight (Right x) f | f x = pure ()
 shouldSatisfyRight (Right x) _ = expectationFailure (show x ++ " doesn't satisfy the predicate")
@@ -21,7 +21,7 @@ shouldSatisfyRight (Right x) _ = expectationFailure (show x ++ " doesn't satisfy
 runParser parser url =
   case MP.runParser parser "" url of
     Left error -> Left $ MP.errorBundlePretty error
-    Right x    -> Right x
+    Right x -> Right x
 
 parseTasks :: Expectation
 parseTasks = do

@@ -2,17 +2,17 @@
 
 module Types where
 
-import           Data.Aeson   (FromJSON, ToJSON)
-import           Data.Maybe   (fromMaybe)
-import           GHC.Generics (Generic)
+import Data.Aeson (FromJSON, ToJSON)
+import Data.Maybe (fromMaybe)
+import GHC.Generics (Generic)
 
 -- | A newtype wrapping the string provided by users
 newtype PRURL = PRURL String
   deriving (Show)
 
 -- | Enumeration of the supported version control systems
-data VCS =
-  GitHub
+data VCS
+  = GitHub
   | GitLab
   deriving (Eq, Show, Bounded, Enum)
 
@@ -25,23 +25,26 @@ data Task = Task Todo Condition
 
 instance Show Task where
   show (Task todo cond) =
-    show todo ++ when ++ fromMaybe  "" suffix
+    show todo ++ when ++ fromMaybe "" suffix
     where
       when =
         case suffix of
           Nothing -> ""
-          Just _  -> " when "
+          Just _ -> " when "
       suffix =
         case cond of
-          TrueCond      -> Nothing
-          IsMerged {}   -> Just $ show cond
+          TrueCond -> Nothing
+          IsMerged {} -> Just $ show cond
           HasGreenCI {} -> Just $ show cond
 
 -- | An effect that spremuta does on the world
-data Todo =
-    Merge PR -- ^ The task to merge a PR, for example "merge https://github.com/smelc/spremuta/pull/12"
-  | Notify -- ^ Notify the user of something: "notify"
-  | SetReady PR -- ^ The task to undraft/set ready a PR, for example "setready https://github.com/smelc/spremuta/pull/12"
+data Todo
+  = -- | The task to merge a PR, for example "merge https://github.com/smelc/spremuta/pull/12"
+    Merge PR
+  | -- | Notify the user of something: "notify"
+    Notify
+  | -- | The task to undraft/set ready a PR, for example "setready https://github.com/smelc/spremuta/pull/12"
+    SetReady PR
 
 instance Show Todo where
   show =
@@ -59,21 +62,22 @@ instance Show Todo where
 -- allTodoKinds = [minBound .. maxBound]
 
 -- | Some Boolean condition
-data Condition =
-    TrueCond
+data Condition
+  = TrueCond
   | IsMerged PR
   | HasGreenCI PR
 
 -- | The kind of a @Task@'s underlying condition, if any.
 toConditionKind :: Task -> Maybe ConditionKind
 toConditionKind =
-  \case Task _todo TrueCond -> Nothing
-        Task _todo (IsMerged _) -> Just IsMergedKind
-        Task _todo (HasGreenCI _) -> Just HasGreenCIKind
+  \case
+    Task _todo TrueCond -> Nothing
+    Task _todo (IsMerged _) -> Just IsMergedKind
+    Task _todo (HasGreenCI _) -> Just HasGreenCIKind
 
 -- | A kind for the cases of @Condition@ where the kind is useful
 data ConditionKind = IsMergedKind | HasGreenCIKind
-  deriving Eq
+  deriving (Eq)
 
 instance Show Condition where
   show =
@@ -83,68 +87,75 @@ instance Show Condition where
       HasGreenCI pr -> show pr ++ " hasgreenci"
 
 -- * VCS agnostic types
+
 --
 -- Types used in all backends
 
 -- | Components that matter to call the REST API on the pull request
 -- URL provided by the user. This type is VCS-agnostic.
-data PR = PR {
-  owner  :: String,
-  repo   :: String,
-  number :: Int,
-  vcs    :: VCS
-} deriving (Show)
+data PR = PR
+  { owner :: String,
+    repo :: String,
+    number :: Int,
+    vcs :: VCS
+  }
+  deriving (Show)
 
 -- * GitHub types
+
 --
 -- Types that are specific to GitHub
 
 -- | The type obtained after deserializing a request to
 -- https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28
-data GitHubPR = GitHubPR {
-    head   :: GitHubRev
-  , url    :: String
-  , merged :: Bool
-  , number :: Int
-  , state  :: String
-} deriving (Generic, Show)
+data GitHubPR = GitHubPR
+  { head :: GitHubRev,
+    url :: String,
+    merged :: Bool,
+    number :: Int,
+    state :: String
+  }
+  deriving (Generic, Show)
 
-instance ToJSON GitHubPR where
+instance ToJSON GitHubPR
 
-instance FromJSON GitHubPR where
+instance FromJSON GitHubPR
 
-data GitHubRev = GitHubRev {
-    sha  :: String
-  , repo :: GitHubRepo
-} deriving (Generic, Show)
+data GitHubRev = GitHubRev
+  { sha :: String,
+    repo :: GitHubRepo
+  }
+  deriving (Generic, Show)
 
-instance ToJSON GitHubRev where
+instance ToJSON GitHubRev
 
-instance FromJSON GitHubRev where
+instance FromJSON GitHubRev
 
 -- | The type obtained after deserializing a request to
 -- https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28
-data GitHubRepo = GitHubRepo {
-    -- | "main"
-    default_branch :: String
+data GitHubRepo = GitHubRepo
+  { -- | "main"
+    default_branch :: String,
     -- | For example "https://github.com/IntersectMBO"
-  , html_url       :: String
-  , owner          :: GitHubOwner
+    html_url :: String,
+    owner :: GitHubOwner,
     -- | The name of the repo, e.g. "cardano-cli"
-  , name           :: String
-} deriving (Generic, Show)
+    name :: String
+  }
+  deriving (Generic, Show)
 
-instance ToJSON GitHubRepo where
+instance ToJSON GitHubRepo
 
-instance FromJSON GitHubRepo where
+instance FromJSON GitHubRepo
 
-data GitHubOwner = GitHubOwner {
-    -- | The name of the repo, e.g. "cardano-cli"
-    login    :: String
+data GitHubOwner = GitHubOwner
+  { -- | The name of the repo, e.g. "cardano-cli"
+    login :: String,
     -- | For example "https://github.com/IntersectMBO"
-  , html_url :: String
-} deriving (Generic, Show)
+    html_url :: String
+  }
+  deriving (Generic, Show)
 
-instance ToJSON GitHubOwner where
+instance ToJSON GitHubOwner
 
-instance FromJSON GitHubOwner where
+instance FromJSON GitHubOwner

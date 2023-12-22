@@ -1,13 +1,13 @@
 module Main where
 
-import           Control.Exception   (catch)
-import           Exception           (SpremutaException)
-import           Options             (Options (..))
+import Control.Exception (catch)
+import Exception (SpremutaException)
+import Options (Options (..))
 import qualified Options
 import qualified Options.Applicative as O
 import qualified Request
-import           System.Exit         (die)
-import           Types
+import System.Exit (die)
+import Types
 
 emojiDie :: String -> IO a
 emojiDie msg = die $ "❌ " ++ msg

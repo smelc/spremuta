@@ -1,10 +1,9 @@
 module Main where -- !!!module name different from filename!!! (for 'cabal test')
 
-import           System.Exit
-
-import           Data.String.Utils
-import           System.Process.Extra (readProcessWithExitCode)
-import           Test.Hspec
+import Data.String.Utils
+import System.Exit
+import System.Process.Extra (readProcessWithExitCode)
+import Test.Hspec
 
 assertSpremutaOK :: [String] -> Expectation
 assertSpremutaOK callArgs = do
@@ -21,7 +20,7 @@ assertSpremutaOK callArgs = do
     logHandle name content =
       putStrLn $ case content of
         "" -> "No " ++ name ++ " ¯ \\ _ (ツ) _ / ¯"
-        _  -> name ++ ": " ++ content
+        _ -> name ++ ": " ++ content
 
 main :: IO ()
 main = hspec $ do

@@ -2,38 +2,46 @@
 
 -- | How to build requests to the GitHub API.
 -- This module is meant to be used qualified.
-module Request (getPR, REST(..)) where
+module Request (getPR, REST (..)) where
 
-import           Conduit                  (MonadThrow)
-import           Control.Exception.Base   (throwIO)
-import           Control.Monad.Except
-import qualified Data.Aeson               as Aeson
+import Conduit (MonadThrow)
+import Control.Exception.Base (throwIO)
+import Control.Monad.Except
+import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encode.Pretty as Aeson
-import qualified Data.ByteString.Lazy     as LBS
-import           Data.Function            ((&))
-import           Data.Maybe               (fromJust)
-import qualified Data.Text.Lazy           as TL
-import qualified Data.Text.Lazy.Encoding  as TL
-import           Exception                (SpremutaException (..))
-import           Log
-import           Network.HTTP.Simple      (Request, addRequestHeader,
-                                           parseRequest)
-import qualified Network.HTTP.Simple      as C
-import           Prelude                  hiding (log)
-import           Types                    (Condition (..), ConditionKind (..),
-                                           GitHubPR (..), PR (..), VCS (..))
+import qualified Data.ByteString.Lazy as LBS
+import Data.Function ((&))
+import Data.Maybe (fromJust)
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
+import Exception (SpremutaException (..))
+import Log
+import Network.HTTP.Simple
+  ( Request,
+    addRequestHeader,
+    parseRequest,
+  )
+import qualified Network.HTTP.Simple as C
+import Types
+  ( Condition (..),
+    ConditionKind (..),
+    GitHubPR (..),
+    PR (..),
+    VCS (..),
+  )
+import Prelude hiding (log)
 
 -- | https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
-getPR :: MonadThrow m => PR -> m Request
+getPR :: (MonadThrow m) => PR -> m Request
 getPR (PR {owner, repo, number, vcs}) =
   case vcs of
     GitHub -> do
       req <- parseRequest $ "GET " <> url
       return $ setHeaders' req
     GitLab -> error "getPR: GitLab not supported"
-    where
-      url = "https://api.github.com/repos/" ++ owner <> "/" ++ repo ++ "/pulls/" ++ show number
-      setHeaders' = setHeaders vcs
+  where
+    url = "https://api.github.com/repos/" ++ owner <> "/" ++ repo ++ "/pulls/" ++ show number
+    setHeaders' = setHeaders vcs
 
 setHeaders :: VCS -> Request -> Request
 setHeaders vcs req =
@@ -52,10 +60,10 @@ class REST a b where
   eval :: (MonadIO m, MonadLogger m) => a -> m b
 
 instance REST Condition Bool where
-   eval cond =
+  eval cond =
     case cond of
-      TrueCond      -> return True
-      IsMerged pr   -> go pr.vcs cond
+      TrueCond -> return True
+      IsMerged pr -> go pr.vcs cond
       HasGreenCI pr -> go pr.vcs cond
     where
       go vcs cond =
@@ -71,7 +79,7 @@ handleStatus req response =
     200 -> return ()
     403 -> liftIO $ throwIO $ Request403 req
     404 -> liftIO $ throwIO $ Request404 req
-    _   -> liftIO $ throwIO $ ResponseKO req response
+    _ -> liftIO $ throwIO $ ResponseKO req response
 
 evalGitHubCondition :: (MonadIO m, MonadLogger m) => Condition -> m Bool
 evalGitHubCondition =
@@ -86,7 +94,7 @@ evalGitHubCondition =
       response :: C.Response LBS.ByteString <- C.httpLBS request
       handleStatus request response
       let bodyBS :: LBS.ByteString = C.getResponseBody response
-          errOrBody:: Either String GitHubPR = Aeson.eitherDecode bodyBS
+          errOrBody :: Either String GitHubPR = Aeson.eitherDecode bodyBS
       body <-
         case errOrBody of
           Left err -> do

@@ -1,11 +1,11 @@
 module Log where
 
-import           Control.Monad
-import           Control.Monad.IO.Class
-import           Prelude                hiding (log)
-import           System.Environment     (getArgs)
+import Control.Monad
+import Control.Monad.IO.Class
+import System.Environment (getArgs)
+import Prelude hiding (log)
 
-class MonadIO m => MonadLogger m where
+class (MonadIO m) => MonadLogger m where
   -- | Unconditionally log a line to stdout
   log :: String -> m ()
   log = liftIO . putStrLn
@@ -24,8 +24,8 @@ class MonadIO m => MonadLogger m where
 
 instance MonadLogger IO
 
-data LogLevel =
-    Info
+data LogLevel
+  = Info
   | Verbose
   | Debug
-  deriving Show
+  deriving (Show)

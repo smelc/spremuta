@@ -1,27 +1,26 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Parse (
-  parseURL,
-  pTask,
-  VCSParser(..)
+module Parse
+  ( parseURL,
+    pTask,
+    VCSParser (..),
   )
-  where
-import           Types
+where
 
-import           Prelude
-
-import           Control.Monad        (unless)
-import           Control.Monad.Extra  (void)
-import           Data.Char            (isDigit)
-import           Data.Either.Extra    (mapLeft)
-import           Data.Function        ((&))
-import           Data.Functor         (($>))
-import           Data.List.Extra      (isInfixOf)
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
+import Control.Monad (unless)
+import Control.Monad.Extra (void)
+import Data.Char (isDigit)
+import Data.Either.Extra (mapLeft)
+import Data.Function ((&))
+import Data.Functor (($>))
+import Data.List.Extra (isInfixOf)
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import Types
+import Prelude
 
 {- HLINT ignore "Use section" -}
 
@@ -48,27 +47,26 @@ pPR = go parsers
     parsers = map parserFor vcss
     parserFor :: VCS -> Parser PR
     parserFor = \case
-          GitHub -> parser @'GitHub
-          GitLab -> parser @'GitLab
+      GitHub -> parser @'GitHub
+      GitLab -> parser @'GitLab
 
 pTask :: Parser Task
 pTask = do
-   todo <- pTodo
-   condition <- end <|> cond
-   return $ Task todo condition
-   where
-     end :: Parser Condition = do
+  todo <- pTodo
+  condition <- end <|> cond
+  return $ Task todo condition
+  where
+    end :: Parser Condition = do
       eof
       return TrueCond
-     cond :: Parser Condition = do
+    cond :: Parser Condition = do
       hspace1
       void $ string "when"
       hspace1
       pCondition
 
-
 pTodo :: Parser Todo
-pTodo = choice [ pMerge, pNotify, pSetReady ]
+pTodo = choice [pMerge, pNotify, pSetReady]
   where
     pMerge = do
       void $ string "merge"
@@ -93,10 +91,12 @@ pCondition = choice [pTrue, pNotTrue]
       return $ case s of "ismerged" -> IsMerged pr; _ -> HasGreenCI pr
 
 pProtocol :: Parser String
-pProtocol = choice
-  [ string "https" -- Order matters with common prefixes in choice!
-  , string "http"
-  , string "ssh" ]
+pProtocol =
+  choice
+    [ string "https", -- Order matters with common prefixes in choice!
+      string "http",
+      string "ssh"
+    ]
 
 -- | Parses a segment of a URL, which is not the last, because it must
 -- end with a slash. The argument indicates what should be parsed (for error messages)
@@ -113,7 +113,7 @@ contains = flip isInfixOf
 instance VCSParser 'GitHub where
   parser = do
     -- Suppose URL is "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
-    _protocol <- pProtocol  -- Read "https"
+    _protocol <- pProtocol -- Read "https"
     void $ string "://"
     host <- parseUntilSlashInc "host" -- Read "github.com"
     unless (host `contains` "github") $ customFailure $ "Expected github to appear in hostname, but found: \"" ++ host ++ "\""
@@ -126,7 +126,7 @@ instance VCSParser 'GitHub where
 instance VCSParser 'GitLab where
   parser = do
     -- Suppose @url@ is "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
-    _protocol <- pProtocol  -- Read "https"
+    _protocol <- pProtocol -- Read "https"
     void $ string "://"
     host <- parseUntilSlashInc "host" -- Read "gitlab.com"
     unless (host `contains` "gitlab") $ customFailure $ "Expected gitlab to appear in hostname, but found: \"" ++ host ++ "\""
