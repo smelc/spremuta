@@ -5,6 +5,9 @@ module Types where
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Maybe (fromMaybe)
 import GHC.Generics (Generic)
+import qualified Log
+
+{- HLINT ignore "Use newtype instead of data" -}
 
 -- | A newtype wrapping the string provided by users
 newtype PRURL = PRURL String
@@ -86,6 +89,27 @@ instance Show Condition where
       IsMerged pr -> show pr ++ " ismerged"
       HasGreenCI pr -> show pr ++ " hasgreenci"
 
+-- * Types used when parting the CLI
+
+-- | The type of options. If adding new options,
+-- you probably want to extend this datatype. It's important that the
+-- options that are common to all commands come first in this datatype.
+-- It simplifies building the parser (see 'programOptions' below)
+data Options = Options
+  { -- | Note that 'logLevel' is unused in the code, because we implement
+    -- verbosity levels in a hacky way in 'Request'. The parser in this file
+    -- is only to document the flags to the user.
+    logLevel :: !Log.LogLevel,
+    -- | The command to call when notifying the user
+    notifyCmd :: Maybe [String],
+    command :: !Command
+  }
+  deriving (Show)
+
+data Command
+  = TaskCmd !Task
+  deriving (Show)
+
 -- * VCS agnostic types
 
 --
@@ -99,7 +123,12 @@ data PR = PR
     number :: Int,
     vcs :: VCS
   }
-  deriving (Show)
+
+instance Show PR where
+  show PR {..} =
+    case vcs of
+      GitHub -> owner ++ "/" ++ repo ++ "/pull/" ++ show number
+      GitLab -> error "Unsupported case GitLab in Show PR instance"
 
 -- * GitHub types
 

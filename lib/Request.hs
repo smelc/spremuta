@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | How to build requests to the GitHub API.
@@ -22,13 +23,8 @@ import Network.HTTP.Simple
     parseRequest,
   )
 import qualified Network.HTTP.Simple as C
+import System.Process.Extra (spawnProcess)
 import Types
-  ( Condition (..),
-    ConditionKind (..),
-    GitHubPR (..),
-    PR (..),
-    VCS (..),
-  )
 import Prelude hiding (log)
 
 -- | https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
@@ -58,6 +54,34 @@ setHeaders vcs req =
 
 class REST a b where
   eval :: (MonadIO m, MonadLogger m) => a -> m b
+
+instance REST (Options, Task) () where
+  eval (opts, Task todo cond) =
+    case todo of
+      Merge _pr -> error "TODO"
+      Notify -> do
+        val :: Bool <- eval cond
+        let msg = case cond of
+              TrueCond -> "True 🤷"
+              IsMerged pr -> show pr ++ " is " ++ (if not val then "not " else "") ++ "merged"
+              HasGreenCI pr -> show pr ++ " has " ++ (if val then "green" else "red") ++ " CI"
+        notify opts msg
+      SetReady _pr -> error "TODO"
+
+notify :: (MonadIO m, MonadLogger m) => Options -> String -> m ()
+notify Options {notifyCmd} msg =
+  case notifyCmd of
+    Nothing -> do
+      verbose "No notify command specified, writing on stdout"
+      liftIO $ putStrLn msg
+    -- TODO @smelc avoid this case, by having type @Maybe (NonEmpty String)@ for
+    -- the notify command in the Options
+    Just [] -> do
+      log "notify command is empty, writing on stdout instead"
+      liftIO $ putStrLn msg
+    Just (program : args) -> do
+      -- Calling spawnProcess: we don't want to wait for this program to finish
+      void $ liftIO $ spawnProcess program (args ++ [msg])
 
 instance REST Condition Bool where
   eval cond =

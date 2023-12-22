@@ -8,30 +8,10 @@ import qualified Options.Applicative as O
 import qualified Parse
 import qualified System.Info as S
 import qualified Text.Megaparsec as MP
-import Types
+import Types hiding (Options)
+import qualified Types as T
 
-{- HLINT ignore "Use newtype instead of data" -}
-
--- | The type of options. If adding new options,
--- you probably want to extend this datatype. It's important that the
--- options that are common to all commands come first in this datatype.
--- It simplifies building the parser (see 'programOptions' below)
-data Options = Options
-  { -- | Note that 'logLevel' is unused in the code, because we implement
-    -- verbosity levels in a hacky way in 'Request'. The parser in this file
-    -- is only to document the flags to the user.
-    logLevel :: !Log.LogLevel,
-    -- | The command to call when notifying the user
-    notifyCmd :: Maybe [String],
-    command :: !Command
-  }
-  deriving (Show)
-
-data Command
-  = TaskCmd !Task
-  deriving (Show)
-
-optsParser :: ParserInfo Options
+optsParser :: ParserInfo T.Options
 optsParser =
   info
     (helper <*> versionOption <*> programOptions)
@@ -49,16 +29,16 @@ programDescription =
     ]
 
 -- | If adding new options, this is probably where you should modify code
-programOptions :: Parser Options
+programOptions :: Parser T.Options
 programOptions =
   fmap setDefaultNotify $
-    Options
+    T.Options
       <$> verbosity
       <*> optional notify
       <*> hsubparser taskCommand
 
-setDefaultNotify :: Options -> Options
-setDefaultNotify o@Options {notifyCmd} =
+setDefaultNotify :: T.Options -> T.Options
+setDefaultNotify o@T.Options {notifyCmd} =
   case notifyCmd of
     Just _ -> o -- Leave what was set by parser
     Nothing -> o {notifyCmd = defaultNotify}

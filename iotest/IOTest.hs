@@ -25,5 +25,6 @@ assertSpremutaOK callArgs = do
 main :: IO ()
 main = hspec $ do
   describe "test" $ do
-    it "task" $
-      assertSpremutaOK ["task", "notify when https://github.com/IntersectMBO/cardano-cli/pull/513 ismerged"]
+    it "task" $ do
+      assertSpremutaOK ["--notify", "echo", "task", "notify when https://github.com/IntersectMBO/cardano-cli/pull/513 ismerged"]
+      assertSpremutaOK ["--notify", "echo", "task", "notify when https://github.com/IntersectMBO/cardano-cli/pull/513 hasgreenci"]
