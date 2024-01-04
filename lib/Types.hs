@@ -7,8 +7,6 @@ import Data.Maybe (fromMaybe)
 import GHC.Generics (Generic)
 import qualified Log
 
-{- HLINT ignore "Use newtype instead of data" -}
-
 -- | A newtype wrapping the string provided by users
 newtype PRURL = PRURL String
   deriving (Show)

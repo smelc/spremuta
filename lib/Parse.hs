@@ -22,8 +22,6 @@ import Text.Megaparsec.Char
 import Types
 import Prelude
 
-{- HLINT ignore "Use section" -}
-
 type Parser = Parsec String String {- error type, input type -}
 
 class VCSParser (vcs :: VCS) where

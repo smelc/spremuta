@@ -1,5 +1,6 @@
 {
         "haskell.manageHLS": "GHCup",
         "haskell.upgradeGHCup": false,
-        "haskell.formattingProvider": "ormolu"
+        "haskell.formattingProvider": "ormolu",
+        "haskell.plugin.hlint.diagnosticsOn": false
 }
