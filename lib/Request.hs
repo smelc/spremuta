@@ -95,16 +95,6 @@ instance REST Condition Bool where
           GitHub -> evalGitHubCondition cond
           GitLab -> error "REST Condition Bool: GitLab not supported"
 
--- | Throws a 'SpremutaException' if the status is not 200. Handle some codes
--- in a special way.
-handleStatus :: (Show a, MonadIO m) => C.Request -> C.Response a -> m ()
-handleStatus req response =
-  case C.getResponseStatusCode response of
-    200 -> return ()
-    403 -> liftIO $ throwIO $ Request403 req
-    404 -> liftIO $ throwIO $ Request404 req
-    _ -> liftIO $ throwIO $ ResponseKO req response
-
 evalGitHubCondition :: (MonadIO m, MonadLogger m) => Condition -> m Bool
 evalGitHubCondition =
   \case
@@ -115,22 +105,38 @@ evalGitHubCondition =
     go :: (MonadIO m, MonadLogger m) => ConditionKind -> PR -> m Bool
     go cond pr = do
       request <- liftIO $ getPR pr
-      response :: C.Response LBS.ByteString <- C.httpLBS request
-      handleStatus request response
-      let bodyBS :: LBS.ByteString = C.getResponseBody response
-          errOrBody :: Either String GitHubPR = Aeson.eitherDecode bodyBS
-      body <-
-        case errOrBody of
-          Left err -> do
-            debug $ TL.unpack $ TL.decodeUtf8 bodyBS
-            liftIO $ throwIO (BadBody request err)
-          Right b -> pure b
-      let value :: Aeson.Value = seq body (Aeson.decode bodyBS) & fromJust
-      verbose $ show body
-      debug $ TL.unpack $ TL.decodeUtf8 $ Aeson.encodePretty value
+      body :: GitHubPR <- evalRequest request
       case cond of
         IsMergedKind ->
           return body.merged
         HasGreenCIKind ->
           -- TODO
           return True
+
+-- | Throws a 'SpremutaException' if the status is not 200. Handle some codes
+-- in a special way.
+handleStatus :: (Show a, MonadIO m) => C.Request -> C.Response a -> m ()
+handleStatus req response =
+  case C.getResponseStatusCode response of
+    200 -> return ()
+    403 -> liftIO $ throwIO $ Request403 req
+    404 -> liftIO $ throwIO $ Request404 req
+    _ -> liftIO $ throwIO $ ResponseKO req response
+
+-- | Performs a HTTP request and returns the body. Can throw a 'SpremutaException'.
+evalRequest :: forall a m. (Aeson.FromJSON a, Show a, MonadLogger m) => Request -> m a
+evalRequest request = do
+  response :: C.Response LBS.ByteString <- C.httpLBS request
+  handleStatus request response
+  let bodyBS :: LBS.ByteString = C.getResponseBody response
+      errOrBody :: Either String a = Aeson.eitherDecode bodyBS
+  body <-
+    case errOrBody of
+      Left err -> do
+        debug $ TL.unpack $ TL.decodeUtf8 bodyBS
+        liftIO $ throwIO (BadBody request err)
+      Right b -> pure b
+  let value :: Aeson.Value = seq body (Aeson.decode bodyBS) & fromJust
+  verbose $ show body
+  debug $ TL.unpack $ TL.decodeUtf8 $ Aeson.encodePretty value
+  return body
