@@ -114,7 +114,8 @@ data Command
 -- Types used in all backends
 
 -- | Components that matter to call the REST API on the pull request
--- URL provided by the user. This type is VCS-agnostic.
+-- URL provided by the user. This type is VCS-agnostic for now
+-- but will maybe need to be generalized when we support GitLab.
 data PR = PR
   { owner :: String,
     repo :: String,
