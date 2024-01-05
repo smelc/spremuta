@@ -28,6 +28,7 @@ import Types
 import Prelude hiding (log)
 
 -- | https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
+-- TODO @smelc rename to buildPRRequest
 getPR :: (MonadThrow m) => PR -> m Request
 getPR (PR {owner, repo, number, vcs}) =
   case vcs of
@@ -37,6 +38,19 @@ getPR (PR {owner, repo, number, vcs}) =
     GitLab -> error "getPR: GitLab not supported"
   where
     url = "https://api.github.com/repos/" ++ owner <> "/" ++ repo ++ "/pulls/" ++ show number
+    setHeaders' = setHeaders vcs
+
+-- | https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28#list-check-runs-for-a-git-reference
+-- TODO @smelc rename to buildCheckRunsRequest
+getCheckRuns :: (MonadThrow m) => CheckRuns -> m Request
+getCheckRuns (CheckRuns {owner, repo, sha, vcs}) =
+  case vcs of
+    GitHub -> do
+      req <- parseRequest $ "GET " <> url
+      return $ setHeaders' req
+    GitLab -> error "getCheckRuns: GitLab not supported"
+  where
+    url = "https://api.github.com/repos/" ++ owner <> "/" ++ repo ++ "/commits/" ++ sha ++ "/check-runs"
     setHeaders' = setHeaders vcs
 
 setHeaders :: VCS -> Request -> Request
@@ -103,15 +117,16 @@ evalGitHubCondition =
     HasGreenCI pr -> go HasGreenCIKind pr
   where
     go :: (MonadIO m, MonadLogger m) => ConditionKind -> PR -> m Bool
-    go cond pr = do
-      request <- liftIO $ getPR pr
-      body :: GitHubPR <- evalRequest request
+    go cond pr@PR {owner, repo, vcs} = do
+      body :: GitHubPR <- liftIO $ getPR pr >>= evalRequest
       case cond of
         IsMergedKind ->
           return body.merged
-        HasGreenCIKind ->
-          -- TODO
-          return True
+        HasGreenCIKind -> do
+          let sha = body.head.sha
+              cr = CheckRuns {owner, repo, sha, vcs}
+          body' :: GitHubCheckRuns <- liftIO $ getCheckRuns cr >>= evalRequest
+          return $ all (\ghCheckRun -> ghCheckRun.conclusion == "success") body'.check_runs
 
 -- | Throws a 'SpremutaException' if the status is not 200. Handle some codes
 -- in a special way.

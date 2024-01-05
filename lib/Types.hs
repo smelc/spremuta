@@ -129,6 +129,16 @@ instance Show PR where
       GitHub -> owner ++ "/" ++ repo ++ "/pull/" ++ show number
       GitLab -> error "Unsupported case GitLab in Show PR instance"
 
+-- | Components that matter to call the REST API on a reference.
+-- This type is VCS-agnostic for now
+-- but will maybe need to be generalized when we support GitLab.
+data CheckRuns = CheckRuns
+  { owner :: String,
+    repo :: String,
+    sha :: String,
+    vcs :: VCS
+  }
+
 -- * GitHub types
 
 --
@@ -187,3 +197,30 @@ data GitHubOwner = GitHubOwner
 instance ToJSON GitHubOwner
 
 instance FromJSON GitHubOwner
+
+-- | Datatype modeling the answer of
+-- https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28#list-check-runs-for-a-git-reference
+data GitHubCheckRuns = GitHubCheckRuns
+  { check_runs :: [GitHubCheckRun]
+  }
+  deriving (Generic, Show)
+
+instance ToJSON GitHubCheckRuns
+
+instance FromJSON GitHubCheckRuns
+
+-- | Datatype modeling part of the answer of
+-- https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28#list-check-runs-for-a-git-reference
+data GitHubCheckRun = GitHubCheckRun
+  { -- | The name of the run , for example "Lint"
+    name :: String,
+    -- | For example "success"
+    conclusion :: String,
+    -- | For example "completed"
+    status :: String
+  }
+  deriving (Generic, Show)
+
+instance ToJSON GitHubCheckRun
+
+instance FromJSON GitHubCheckRun
