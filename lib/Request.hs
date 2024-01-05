@@ -3,7 +3,12 @@
 
 -- | How to build requests to the GitHub API.
 -- This module is meant to be used qualified.
-module Request (getPR, REST (..)) where
+module Request
+  ( getPR,
+    getStatuses,
+    REST (..),
+  )
+where
 
 import Conduit (MonadThrow)
 import Control.Exception.Base (throwIO)
@@ -37,6 +42,18 @@ getPR (PR {owner, repo, number, vcs}) =
     GitLab -> error "getPR: GitLab not supported"
   where
     url = "https://api.github.com/repos/" ++ owner <> "/" ++ repo ++ "/pulls/" ++ show number
+    setHeaders' = setHeaders vcs
+
+-- | https://docs.github.com/en/rest/commits/statuses?apiVersion=2022-11-28#get-the-combined-status-for-a-specific-reference
+getStatuses :: (MonadThrow m) => StatusesInput -> m Request
+getStatuses (StatusesInput {owner, repo, sha, vcs}) =
+  case vcs of
+    GitHub -> do
+      req <- parseRequest $ "GET " <> url
+      return $ setHeaders' req
+    GitLab -> error "getStatuses: GitLab not supported"
+  where
+    url = "https://api.github.com/repos/" ++ owner <> "/" ++ repo ++ "/commits/" ++ sha ++ "/status"
     setHeaders' = setHeaders vcs
 
 setHeaders :: VCS -> Request -> Request
@@ -113,24 +130,42 @@ evalGitHubCondition =
     HasGreenCI pr -> go HasGreenCIKind pr
   where
     go :: (MonadIO m, MonadLogger m) => ConditionKind -> PR -> m Bool
-    go cond pr = do
+    go cond (pr@PR{owner, repo, vcs}) = do
       request <- liftIO $ getPR pr
       response :: C.Response LBS.ByteString <- C.httpLBS request
       handleStatus request response
       let bodyBS :: LBS.ByteString = C.getResponseBody response
           errOrBody :: Either String GitHubPR = Aeson.eitherDecode bodyBS
-      body <-
+      ghPR <-
         case errOrBody of
           Left err -> do
             debug $ TL.unpack $ TL.decodeUtf8 bodyBS
             liftIO $ throwIO (BadBody request err)
           Right b -> pure b
-      let value :: Aeson.Value = seq body (Aeson.decode bodyBS) & fromJust
-      verbose $ show body
+      let value :: Aeson.Value = seq ghPR (Aeson.decode bodyBS) & fromJust
+      verbose $ show ghPR
       debug $ TL.unpack $ TL.decodeUtf8 $ Aeson.encodePretty value
       case cond of
         IsMergedKind ->
-          return body.merged
-        HasGreenCIKind ->
-          -- TODO
-          return True
+          return ghPR.merged
+        HasGreenCIKind -> do
+          let sha = ghPR.head.sha
+          gitHubStatuses $ StatusesInput {owner, repo, sha, vcs}
+
+gitHubStatuses :: (MonadIO m, MonadLogger m) => StatusesInput -> m Bool
+gitHubStatuses input = do
+  request <- liftIO $ getStatuses input
+  response :: C.Response LBS.ByteString <- C.httpLBS request
+  handleStatus request response
+  let bodyBS :: LBS.ByteString = C.getResponseBody response
+      errOrBody :: Either String GitHubPR = Aeson.eitherDecode bodyBS
+  ghPR <-
+    case errOrBody of
+      Left err -> do
+        debug $ TL.unpack $ TL.decodeUtf8 bodyBS
+        liftIO $ throwIO (BadBody request err)
+      Right b -> pure b
+  let _value :: Aeson.Value = seq ghPR (Aeson.decode bodyBS) & fromJust
+  verbose $ show ghPR
+  -- debug $ TL.unpack $ TL.decodeUtf8 $ Aeson.encodePretty value
+  undefined

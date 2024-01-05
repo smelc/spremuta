@@ -129,6 +129,18 @@ instance Show PR where
       GitHub -> owner ++ "/" ++ repo ++ "/pull/" ++ show number
       GitLab -> error "Unsupported case GitLab in Show PR instance"
 
+-- | The data required to get the statuses of the CI of a reference.
+-- This type is VCS-agnostic for now
+-- but will maybe need to be generalized when we support GitLab.
+data StatusesInput = StatusesInput
+  { owner :: String,
+    repo :: String,
+    -- | The SHA of a commit, for example 520f457d3b6f1d9e8bfa77d0ba8078f609e39f1c
+    sha :: String,
+    vcs :: VCS
+  }
+  deriving (Show)
+
 -- * GitHub types
 
 --
