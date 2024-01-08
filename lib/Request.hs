@@ -1,11 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
--- | How to build requests to the GitHub API.
+-- | How to execute requests to the GitHub API.
 -- This module is meant to be used qualified.
-module Request (getPR, REST (..)) where
+module Request (REST (..)) where
 
-import Conduit (MonadThrow)
 import Control.Exception.Base (throwIO)
 import Control.Monad.Except
 import qualified Data.Aeson as Aeson
@@ -19,52 +18,12 @@ import Exception (SpremutaException (..))
 import Log
 import Network.HTTP.Simple
   ( Request,
-    addRequestHeader,
-    parseRequest,
   )
 import qualified Network.HTTP.Simple as C
+import qualified RequestMaker
 import System.Process.Extra (spawnProcess)
 import Types
 import Prelude hiding (log)
-
--- | https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
--- TODO @smelc rename to buildPRRequest
-getPR :: (MonadThrow m) => PR -> m Request
-getPR (PR {owner, repo, number, vcs}) =
-  case vcs of
-    GitHub -> do
-      req <- parseRequest $ "GET " <> url
-      return $ setHeaders' req
-    GitLab -> error "getPR: GitLab not supported"
-  where
-    url = "https://api.github.com/repos/" ++ owner <> "/" ++ repo ++ "/pulls/" ++ show number
-    setHeaders' = setHeaders vcs
-
--- | https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28#list-check-runs-for-a-git-reference
--- TODO @smelc rename to buildCheckRunsRequest
-getCheckRuns :: (MonadThrow m) => CheckRuns -> m Request
-getCheckRuns (CheckRuns {owner, repo, sha, vcs}) =
-  case vcs of
-    GitHub -> do
-      req <- parseRequest $ "GET " <> url
-      return $ setHeaders' req
-    GitLab -> error "getCheckRuns: GitLab not supported"
-  where
-    url = "https://api.github.com/repos/" ++ owner <> "/" ++ repo ++ "/commits/" ++ sha ++ "/check-runs"
-    setHeaders' = setHeaders vcs
-
-setHeaders :: VCS -> Request -> Request
-setHeaders vcs req =
-  case vcs of
-    GitHub ->
-      req'
-        & addHeader ("Accept", "application/vnd.github+json")
-        & addHeader ("X-GitHub-Api-Version", "2022-11-28")
-    GitLab -> error "SetHeaders: GitLab not supported"
-  where
-    addHeader (name, value) = addRequestHeader name value
-    agent = ("User-Agent", "HTTP-Conduit")
-    req' = addHeader agent req
 
 class REST a b where
   eval :: (MonadIO m, MonadLogger m) => a -> m b
@@ -118,14 +77,14 @@ evalGitHubCondition =
   where
     go :: (MonadIO m, MonadLogger m) => ConditionKind -> PR -> m Bool
     go cond pr@PR {owner, repo, vcs} = do
-      body :: GitHubPR <- liftIO $ getPR pr >>= evalRequest
+      body :: GitHubPR <- liftIO $ RequestMaker.makePR pr >>= evalRequest
       case cond of
         IsMergedKind ->
           return body.merged
         HasGreenCIKind -> do
           let sha = body.head.sha
               cr = CheckRuns {owner, repo, sha, vcs}
-          body' :: GitHubCheckRuns <- liftIO $ getCheckRuns cr >>= evalRequest
+          body' :: GitHubCheckRuns <- liftIO $ RequestMaker.makeCheckRuns cr >>= evalRequest
           return $ all (\ghCheckRun -> ghCheckRun.conclusion == "success") body'.check_runs
 
 -- | Throws a 'SpremutaException' if the status is not 200. Handle some codes
