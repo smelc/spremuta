@@ -97,15 +97,15 @@ data Options = Options
   { -- | Note that 'logLevel' is unused in the code, because we implement
     -- verbosity levels in a hacky way in 'Request'. The parser in this file
     -- is only to document the flags to the user.
-    logLevel :: !Log.LogLevel,
+    logLevel :: Log.LogLevel,
     -- | The command to call when notifying the user
     notifyCmd :: Maybe [String],
-    command :: !Command
+    command :: Command
   }
   deriving (Show)
 
 data Command
-  = TaskCmd !Task
+  = TaskCmd Task
   deriving (Show)
 
 -- * VCS agnostic types

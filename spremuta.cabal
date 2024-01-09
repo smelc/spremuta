@@ -47,6 +47,7 @@ common common-all
                         OverloadedStrings
                         RecordWildCards
                         ScopedTypeVariables
+                        StrictData
                         TypeApplications
 
 executable spremuta
