@@ -24,10 +24,12 @@ common common-all
                      , extra
                      , http-conduit
                      , megaparsec
-		             , mtl
+                     , mtl
+                     , o-clock
                      , text
      hs-source-dirs:   lib
-     other-modules:    Exception
+     other-modules:    Daemon
+                     , Exception
                      , Log
                      , Parse
                      , Request

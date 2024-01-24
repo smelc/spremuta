@@ -58,21 +58,31 @@ parseGitLabURLs = do
   runParser (Parse.parser @'GitLab) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
     `shouldSatisfy` isLeft
 
-goldenHelp :: Expectation
-goldenHelp = do
+goldenHelp ::
+  -- | The path of the golden file
+  String ->
+  -- | The arguments to pass to spremuta
+  [String] ->
+  Expectation
+goldenHelp goldenFile callerArgs = do
   (ec, stdout, _stderr) <- readProcessWithExitCode program args ""
   when (ec /= ExitSuccess) (expectationFailure $ unwords args <> " failed with exit code " <> show ec <> ", whereas a success was expected")
-  golden <- readFile "test/golden/help.txt"
+  golden <- readFile goldenFile
   stdout `shouldBe` golden
   where
     program = "cabal"
     -- --verbose=0 avoids printing "Up to date"
-    args = ["--verbose=0", "run", "spremuta", "--", "--help"]
+    args = ["--verbose=0", "run", "spremuta", "--"] ++ callerArgs ++ ["--help"]
 
 main :: IO ()
 main = hspec $ do
   describe "golden" $ do
-    it "top-level help" goldenHelp
+    -- Regenerate golden file with: cabal --verbose=0 run spremuta -- --help >| test/golden/help.txt
+    it "top-level help" $ goldenHelp "test/golden/help.txt" []
+    -- Regenerate golden file with: cabal --verbose=0 run spremuta -- task --help >| test/golden/help_task.txt
+    it "top-level help" $ goldenHelp "test/golden/help.txt" []
+    -- Regenerate golden file with: cabal --verbose=0 run spremuta -- daemon --help >| test/golden/help_daemon.txt
+    it "top-level help" $ goldenHelp "test/golden/help.txt" []
   describe "parse URL" $ do
     it "GitHub" parseGitHubURLs
     it "GitLab" parseGitLabURLs

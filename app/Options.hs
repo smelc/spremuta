@@ -3,11 +3,13 @@ module Options where
 import Data.Bifunctor (first)
 import Data.List (intercalate)
 import qualified Log
+import Numeric.Natural
 import Options.Applicative
 import qualified Options.Applicative as O
 import qualified Parse
 import qualified System.Info as S
 import qualified Text.Megaparsec as MP
+import Text.Read
 import Types hiding (Options)
 import qualified Types as T
 
@@ -25,7 +27,7 @@ programDescription =
     "\n"
     [ "spremuta runs in two modes:",
       "\"spremuta task TASK\" runs the given task and exits immediately.",
-      "\"spremuta daemon\" continuously reads tasks from the spremuta.tasks file."
+      "\"spremuta daemon\" continuously reads tasks from the spremuta.tasks text file."
     ]
 
 -- | If adding new options, this is probably where you should modify code
@@ -35,7 +37,7 @@ programOptions =
     T.Options
       <$> verbosity
       <*> optional notify
-      <*> hsubparser taskCommand
+      <*> hsubparser (taskCommand <> daemonCommand)
 
 setDefaultNotify :: T.Options -> T.Options
 setDefaultNotify o@T.Options {notifyCmd} =
@@ -77,7 +79,28 @@ notify =
 taskCommand :: Mod CommandFields Command
 taskCommand =
   O.command ("task" :: String) $
-    info (TaskCmd <$> argument taskReader (help "TODO")) fullDesc
+    info
+      ( TaskCmd
+          <$> argument taskReader (help "TODO")
+      )
+      O.fullDesc
   where
     taskReader :: ReadM Task =
       eitherReader (first MP.errorBundlePretty . MP.runParser Parse.pTask "")
+
+daemonCommand :: Mod CommandFields Command
+daemonCommand =
+  O.command ("daemon" :: String) $
+    info
+      ( DaemonCmd
+          <$> argument freqReader (help "TODO")
+          <*> argument str (help "TODO")
+      )
+      O.fullDesc
+  where
+    freqReader :: ReadM Natural = eitherReader freqParser
+    freqParser :: String -> Either String Natural
+    freqParser s =
+      case readMaybe s of
+        Nothing -> Left $ "Cannot parse frequency argument: " ++ s
+        Just n -> Right n

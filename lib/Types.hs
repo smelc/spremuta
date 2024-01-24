@@ -6,6 +6,7 @@ import Data.Aeson (FromJSON, ToJSON)
 import Data.Maybe (fromMaybe)
 import GHC.Generics (Generic)
 import qualified Log
+import Numeric.Natural
 
 -- | A newtype wrapping the string provided by users
 newtype PRURL = PRURL String
@@ -105,7 +106,11 @@ data Options = Options
   deriving (Show)
 
 data Command
-  = TaskCmd Task
+  = -- | The tasks to execute
+    TaskCmd Task
+  | -- | The first parameter is the frequency at which the daemon wakes up, in minutes.
+    -- The second parameter is the path to file from which to read tasks.
+    DaemonCmd Natural FilePath
   deriving (Show)
 
 -- * VCS agnostic types

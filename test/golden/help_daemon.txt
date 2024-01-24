@@ -1,0 +1,4 @@
+Usage: spremuta daemon 
+
+Available options:
+  -h,--help                Show this help text

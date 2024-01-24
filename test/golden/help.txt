@@ -2,7 +2,7 @@ Usage: spremuta [--version] [--verbose | --debug] [--notify ARG] COMMAND
 
   spremuta runs in two modes: "spremuta task TASK" runs the given task and exits
   immediately. "spremuta daemon" continuously reads tasks from the
-  spremuta.tasks file.
+  spremuta.tasks text file.
 
 Available options:
   -h,--help                Show this help text
@@ -18,3 +18,4 @@ Available options:
 
 Available commands:
   task                     
+  daemon                   
