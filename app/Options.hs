@@ -81,7 +81,19 @@ taskCommand =
   O.command ("task" :: String) $
     info
       ( TaskCmd
-          <$> argument taskReader (help "TODO")
+          <$> ( argument
+                  taskReader
+                  ( mconcat
+                      [ O.help $
+                          unlines
+                            [ "The task to execute. For example:",
+                              "\"merge  https://github.com/smelc/spremuta/pull/1\"",
+                              "or \"notify when https://github.com/smelc/spremuta/pull/2 hasgreenci\""
+                            ],
+                        O.metavar "TASK"
+                      ]
+                  )
+              )
       )
       O.fullDesc
   where
@@ -93,8 +105,30 @@ daemonCommand =
   O.command ("daemon" :: String) $
     info
       ( DaemonCmd
-          <$> argument freqReader (help "TODO")
-          <*> argument str (help "TODO")
+          <$> ( option
+                  freqReader
+                  ( mconcat
+                      [ O.metavar "FREQ",
+                        O.short 'f',
+                        O.long "frequency",
+                        O.help "The frequency at which the daemon wakes up, in minutes",
+                        O.value 1,
+                        O.showDefault
+                      ]
+                  )
+              )
+          <*> ( option
+                  str
+                  ( mconcat
+                      [ O.metavar "PATH",
+                        O.short 't',
+                        O.long "tasks",
+                        O.help "The text file from which to read tasks",
+                        O.value "spremuta.tasks",
+                        O.showDefault
+                      ]
+                  )
+              )
       )
       O.fullDesc
   where

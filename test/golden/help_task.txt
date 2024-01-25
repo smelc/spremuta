@@ -1,4 +1,8 @@
-Usage: spremuta task 
+Usage: spremuta task TASK
 
 Available options:
+  TASK                     The task to execute. For example: "merge
+                           https://github.com/smelc/spremuta/pull/1" or "notify
+                           when https://github.com/smelc/spremuta/pull/2
+                           hasgreenci"
   -h,--help                Show this help text
