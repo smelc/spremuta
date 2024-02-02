@@ -8,7 +8,6 @@ import GHC.IO.Exception (ExitCode (ExitSuccess))
 import qualified Parse
 import System.Process.Extra (readProcessWithExitCode)
 import Test.Hspec
-import qualified Text.Megaparsec as MP
 import Types
 
 -- | @shouldSatisfyRight (Left _) _@ fails. @shouldSatisfyRight (Right x) f@
@@ -18,46 +17,41 @@ shouldSatisfyRight (Left a) _ = expectationFailure $ "Expected Right, got (Left 
 shouldSatisfyRight (Right x) f | f x = pure ()
 shouldSatisfyRight (Right x) _ = expectationFailure (show x ++ " doesn't satisfy the predicate")
 
-runParser parser url =
-  case MP.runParser parser "" url of
-    Left error -> Left $ MP.errorBundlePretty error
-    Right x -> Right x
-
 parseTasks :: Expectation
 parseTasks = do
-  runParser Parse.pTask "merge  https://github.com/smelc/spremuta/pull/1"
+  Parse.parseAny Parse.pTask "merge  https://github.com/smelc/spremuta/pull/1"
     `shouldSatisfy` isRight
-  runParser Parse.pTask "merge https://github.com/too_short"
+  Parse.parseAny Parse.pTask "merge https://github.com/too_short"
     `shouldSatisfy` isLeft
-  runParser Parse.pTask "wrong https://github.com/smelc/spremuta/pull/1"
+  Parse.parseAny Parse.pTask "wrong https://github.com/smelc/spremuta/pull/1"
     `shouldSatisfy` isLeft
-  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when garbage"
+  Parse.parseAny Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when garbage"
     `shouldSatisfy` isLeft
-  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1   when  True"
+  Parse.parseAny Parse.pTask "merge https://github.com/smelc/spremuta/pull/1   when  True"
     `shouldSatisfy` isRight
-  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 hasgreenci"
+  Parse.parseAny Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 hasgreenci"
     `shouldSatisfy` isRight
-  runParser Parse.pTask "notify when https://github.com/smelc/spremuta/pull/2 hasgreenci"
+  Parse.parseAny Parse.pTask "notify when https://github.com/smelc/spremuta/pull/2 hasgreenci"
     `shouldSatisfy` isRight
-  runParser Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 hasgreenci"
+  Parse.parseAny Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 hasgreenci"
     `shouldSatisfyRight` (\t -> toConditionKind t == Just HasGreenCIKind)
 
 parseGitHubURLs :: Expectation
 parseGitHubURLs = do
-  runParser (Parse.parser @'GitHub) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
+  Parse.parseAny (Parse.parser @'GitHub) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
     `shouldSatisfy` isRight
-  runParser (Parse.parser @'GitHub) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
+  Parse.parseAny (Parse.parser @'GitHub) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
     `shouldSatisfyRight` (\bits -> bits.vcs == GitHub)
-  runParser (Parse.parser @'GitHub) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
+  Parse.parseAny (Parse.parser @'GitHub) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
     `shouldSatisfy` isLeft
 
 parseGitLabURLs :: Expectation
 parseGitLabURLs = do
-  runParser (Parse.parser @'GitLab) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
+  Parse.parseAny (Parse.parser @'GitLab) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
     `shouldSatisfy` isRight
-  runParser (Parse.parser @'GitLab) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
+  Parse.parseAny (Parse.parser @'GitLab) "https://gitlab.com/tezos/tezos/-/merge_requests/10922"
     `shouldSatisfyRight` (\bits -> bits.vcs == GitLab)
-  runParser (Parse.parser @'GitLab) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
+  Parse.parseAny (Parse.parser @'GitLab) "https://github.com/tbagrel1/datasheet_aggregator_10th/pull/12"
     `shouldSatisfy` isLeft
 
 goldenHelp ::

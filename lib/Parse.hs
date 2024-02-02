@@ -5,6 +5,7 @@
 
 module Parse
   ( parseURL,
+    parseAny,
     pTask,
     VCSParser (..),
   )
@@ -13,8 +14,6 @@ where
 import Control.Monad (unless)
 import Control.Monad.Extra (void)
 import Data.Char (isDigit)
-import Data.Either.Extra (mapLeft)
-import Data.Function ((&))
 import Data.Functor (($>))
 import Data.List.Extra (isInfixOf)
 import Text.Megaparsec
@@ -33,7 +32,14 @@ instance ShowErrorComponent String where
   showErrorComponent = id
 
 parseURL :: PRURL -> Either String PR
-parseURL (PRURL url) = runParser pPR "" url & mapLeft errorBundlePretty
+parseURL (PRURL url) = parseAny pPR url
+
+-- | Slightly instantiated version of megaparsec's 'runParser'
+parseAny :: (VisualStream s, TraversableStream s, ShowErrorComponent e) => Parsec e s b -> s -> Either String b
+parseAny parser url =
+  case runParser parser "" url of
+    Left error -> Left $ errorBundlePretty error
+    Right x -> Right x
 
 pPR :: Parser PR
 pPR = go parsers
