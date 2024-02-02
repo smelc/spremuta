@@ -1,6 +1,7 @@
 {
-        "haskell.manageHLS": "GHCup",
+        "haskell.manageHLS": "PATH",
         "haskell.upgradeGHCup": false,
         "haskell.formattingProvider": "ormolu",
-        "haskell.plugin.hlint.diagnosticsOn": false
+        "haskell.plugin.hlint.diagnosticsOn": false,
+        "haskell.serverExecutablePath": "haskell-language-server-9.4.7~2.4.0.0"
 }
