@@ -3,6 +3,6 @@ Usage: spremuta daemon [-f|--frequency FREQ] [-t|--tasks PATH]
 Available options:
   -f,--frequency FREQ      The frequency at which the daemon wakes up, in
                            minutes (default: 1)
-  -t,--tasks PATH          The text file from which to read tasks
+  -t,--tasks PATH          The text file (UTF8 encoded) from which to read tasks
                            (default: "spremuta.tasks")
   -h,--help                Show this help text

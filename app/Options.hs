@@ -123,7 +123,7 @@ daemonCommand =
                       [ O.metavar "PATH",
                         O.short 't',
                         O.long "tasks",
-                        O.help "The text file from which to read tasks",
+                        O.help "The text file (UTF8 encoded) from which to read tasks",
                         O.value "spremuta.tasks",
                         O.showDefault
                       ]
