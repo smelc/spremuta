@@ -13,14 +13,26 @@ class (MonadIO m) => MonadLogger m where
   -- | Log a line to stdout if '--verbose' has been has been specified on the command line
   verbose :: String -> m ()
   verbose s = do
-    args <- liftIO getArgs
-    when ("--verbose" `elem` args) (log s)
+    doIt <- hasVerbose
+    when doIt (log s)
 
   -- | Log a line to stdout if '--verbose' or '--debug' has been specified on the command line
   debug :: String -> m ()
   debug s = do
+    doIt <- hasDebug
+    when doIt (log s)
+
+  -- | Returns whether @debug@ has an effect
+  hasVerbose :: m Bool
+  hasVerbose = do
     args <- liftIO getArgs
-    when ("--debug" `elem` args || "--verbose" `elem` args) (log s)
+    return $ "--verbose" `elem` args
+
+  -- | Returns whether @verbose@ has an effect
+  hasDebug :: m Bool
+  hasDebug = do
+    args <- liftIO getArgs
+    return $ ("--debug" `elem` args || "--verbose" `elem` args)
 
 instance MonadLogger IO
 

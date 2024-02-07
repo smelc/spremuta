@@ -18,7 +18,7 @@ import Data.Function ((&))
 import Data.Maybe (fromJust)
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
-import Exception (SpremutaException (..))
+import Exception (SpremutaException (..), mkBadBody)
 import Log
 import Network.HTTP.Simple (Request)
 import qualified Network.HTTP.Simple as C
@@ -122,10 +122,21 @@ evalRequest request = do
   body <-
     case errOrBody of
       Left err -> do
-        debug $ TL.unpack $ TL.decodeUtf8 bodyBS
-        liftIO $ throwIO (BadBody request err)
+        -- Failed deserializing to type 'a'. Let's try to deserialize to Aeson.Value
+        -- to log a more readable value. It's important for ease of debugging.
+        debug $ case Aeson.eitherDecode bodyBS of
+          Left _ ->
+            -- Can't do better than showing raw body
+            TL.unpack $ TL.decodeUtf8 bodyBS
+          Right (value :: Aeson.Value) ->
+            -- Can show formatted JSON
+            showValue value
+        badBody <- Exception.mkBadBody request err
+        liftIO $ throwIO badBody
       Right b -> pure b
   let value :: Aeson.Value = seq body (Aeson.decode bodyBS) & fromJust
   verbose $ show body
-  debug $ TL.unpack $ TL.decodeUtf8 $ Aeson.encodePretty value
+  debug $ showValue value
   return body
+  where
+    showValue x = TL.unpack . TL.decodeUtf8 $ Aeson.encodePretty x
