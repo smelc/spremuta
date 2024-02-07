@@ -1,35 +1,41 @@
-module Daemon (run) where
+module Daemon
+  ( Data (..),
+    run,
+  )
+where
 
 import Control.Monad.IO.Class
 import Data.Char (isSpace)
+import Data.Maybe (listToMaybe)
 import Data.Ratio ((%))
 import Log
 import Numeric.Natural
+import qualified Parse
+import qualified Request
 import System.Directory.Extra (doesFileExist)
 import System.IO.Extra (readFileUTF8, writeFileUTF8)
 import qualified Time.Units as T
+import Types
 import Prelude hiding (log)
 
-run ::
-  (MonadIO m, MonadLogger m) =>
-  -- | Frequency at which to wake up (in minutes)
-  Natural ->
-  -- | The path to the tasks file
-  FilePath ->
-  m ()
-run freq file = do
-  runOnce freq file
-  T.threadDelay $ T.minute (freq % 1)
-  run freq file
+-- | Data that is needed to execute the daemon. Name meant to be used qualified.
+data Data = Data
+  { -- | Frequency at which to wake up (in minutes)
+    frequency :: Natural,
+    -- | The path to the tasks file
+    tasksFile :: FilePath,
+    -- | The options
+    options :: Options
+  }
 
-runOnce ::
-  (MonadIO m, MonadLogger m) =>
-  -- | Frequency at which to wake up (in minutes)
-  Natural ->
-  -- | The path to the tasks file
-  FilePath ->
-  m ()
-runOnce _freq tasksFile = do
+run :: (MonadIO m, MonadLogger m) => Data -> m ()
+run daemonData@Data {frequency = freq} = do
+  runOnce daemonData
+  T.threadDelay $ T.minute (freq % 1)
+  run daemonData
+
+runOnce :: (MonadIO m, MonadLogger m) => Data -> m ()
+runOnce daemonData@Data {tasksFile} = do
   -- This check doesn't strictly guarantee the file will exist when we read it.
   -- But most of the time it will, which makes the UX better (error message instead
   -- of exception)
@@ -44,7 +50,27 @@ runOnce _freq tasksFile = do
       return ()
     _ -> do
       -- Not strictly necessary, but nice for the UX:
-      _tasks <- eatEmptyLines tasks tasksFile
+      tasks <- eatEmptyLines tasks tasksFile
+      let mTaskStr = listToMaybe tasks
+      case mTaskStr of
+        Nothing -> return ()
+        Just taskStr -> runOnceOnTask daemonData taskStr
+
+-- | The continuation of @runOnce@ that deals with executing with the first
+-- task (the second parameter) of the file. Spinoff of @runOnce@ to
+-- keep the former small.
+runOnceOnTask ::
+  (MonadIO m, MonadLogger m) =>
+  Data ->
+  -- | The task to execute
+  String ->
+  m ()
+runOnceOnTask _daemonData@Data {options} taskStr = do
+  case Parse.parseAny Parse.pTask taskStr of
+    Left _errorMsg ->
+      undefined
+    Right task -> do
+      _r :: Request.EvalResult <- Request.eval (options, task)
       undefined
 
 -- | @eatEmptyLines l f@ removes the empty lines from @f@ and returns the

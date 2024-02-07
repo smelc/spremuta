@@ -13,10 +13,11 @@ main :: IO ()
 main = do
   opts@Options {command} <- O.execParser Options.optsParser
   case command of
-    TaskCmd t ->
-      Request.eval (opts, t) `catch` handler
-    DaemonCmd freq file ->
-      Daemon.run freq file
+    TaskCmd t -> do
+      _ :: Request.EvalResult <- Request.eval (opts, t) `catch` handler
+      return ()
+    DaemonCmd frequency tasksFile ->
+      Daemon.run $ Daemon.Data {frequency, tasksFile, options = opts}
 
 handler :: SpremutaException -> IO a
 handler e = die $ "💣 " ++ show e

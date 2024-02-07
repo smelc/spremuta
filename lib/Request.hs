@@ -3,7 +3,11 @@
 
 -- | How to execute requests to the GitHub API.
 -- This module is meant to be used qualified.
-module Request (REST (..)) where
+module Request
+  ( EvalResult (..),
+    REST (..),
+  )
+where
 
 import Control.Exception.Base (throwIO)
 import Control.Monad.Except
@@ -16,9 +20,7 @@ import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
 import Exception (SpremutaException (..))
 import Log
-import Network.HTTP.Simple
-  ( Request,
-  )
+import Network.HTTP.Simple (Request)
 import qualified Network.HTTP.Simple as C
 import qualified RequestMaker
 import System.Process.Extra (spawnProcess)
@@ -28,7 +30,15 @@ import Prelude hiding (log)
 class REST a b where
   eval :: (MonadIO m, MonadLogger m) => a -> m b
 
-instance REST (Options, Task) () where
+-- | How to handle a task after it has been passed to @eval@, when
+-- in daemon mode.
+data EvalResult
+  = -- | In daemon mode: task should be reexecuted at next tick
+    KeepMe
+  | -- | In daemon mode: task has been completed, and should be removed
+    RemoveMe
+
+instance REST (Options, Task) EvalResult where
   eval (opts, Task todo cond) =
     case todo of
       Merge _pr -> error "TODO"
@@ -38,7 +48,12 @@ instance REST (Options, Task) () where
               TrueCond -> "True 🤷"
               IsMerged pr -> show pr ++ " is " ++ (if not val then "not " else "") ++ "merged"
               HasGreenCI pr -> show pr ++ " has " ++ (if val then "green" else "red") ++ " CI"
-        notify opts msg
+        case val of
+          False ->
+            return KeepMe
+          True -> do
+            notify opts msg
+            return RemoveMe
       SetReady _pr -> error "TODO"
 
 notify :: (MonadIO m, MonadLogger m) => Options -> String -> m ()
