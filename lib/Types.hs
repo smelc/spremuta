@@ -25,6 +25,9 @@ vcss = [minBound .. maxBound]
 -- | A task: a single line in a spremuta.tasks file
 data Task = Task Todo Condition
 
+-- | A line coming from the tasks file
+newtype TaskString = TaskString String
+
 instance Show Task where
   show (Task todo cond) =
     show todo ++ when ++ fromMaybe "" suffix
