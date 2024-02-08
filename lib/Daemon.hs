@@ -27,15 +27,18 @@ data Data = Data
     frequency :: Natural,
     -- | The path to the tasks file
     tasksFile :: FilePath,
+    -- | The  number of times the daemon woke up already. Initially at 0.
+    tick :: Natural,
     -- | The options
     options :: Options
   }
 
 run :: (MonadIO m, MonadLogger m) => Data -> m ()
 run daemonData@Data {frequency = freq} = do
+  verbose $ "Tick " <> show daemonData.tick
   runOnce daemonData
   T.threadDelay $ T.minute (freq % 1)
-  run daemonData
+  run daemonData {tick = daemonData.tick + 1}
 
 runOnce :: (MonadIO m, MonadLogger m) => Data -> m ()
 runOnce daemonData@Data {tasksFile} = do
@@ -77,4 +80,5 @@ runOnceOnTask _daemonData@Data {tasksFile, options} t@(TaskString taskStr) = do
       void $ TasksFile.commentTask t tasksFile
     Right task -> do
       _r :: Request.EvalResult <- Request.eval (options, task)
-      undefined
+      -- TODO do something with the result
+      return ()

@@ -17,7 +17,7 @@ main = do
       _ :: Request.EvalResult <- Request.eval (opts, t) `catch` handler
       return ()
     DaemonCmd frequency tasksFile ->
-      Daemon.run $ Daemon.Data {frequency, tasksFile, options = opts}
+      Daemon.run $ Daemon.Data {frequency, tasksFile, tick = 0, options = opts}
 
 handler :: SpremutaException -> IO a
 handler e = die $ "💣 " ++ show e

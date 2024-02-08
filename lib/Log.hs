@@ -25,17 +25,17 @@ class (MonadIO m) => MonadLogger m where
     doIt <- hasDebug
     when doIt (log s)
 
-  -- | Returns whether @debug@ has an effect
+  -- | Returns whether @verbose@ has an effect
   hasVerbose :: m Bool
   hasVerbose = do
     args <- liftIO getArgs
-    return $ "--verbose" `elem` args
+    return $ ("--debug" `elem` args || "--verbose" `elem` args)
 
-  -- | Returns whether @verbose@ has an effect
+  -- | Returns whether @debug@ has an effect
   hasDebug :: m Bool
   hasDebug = do
     args <- liftIO getArgs
-    return $ ("--debug" `elem` args || "--verbose" `elem` args)
+    return $ "--debug" `elem` args
 
 instance MonadLogger IO
 

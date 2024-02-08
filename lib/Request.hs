@@ -100,7 +100,7 @@ evalGitHubCondition =
           let sha = body.head.sha
               cr = CheckRuns {owner, repo, sha, vcs}
           body' :: GitHubCheckRuns <- liftIO $ RequestMaker.makeCheckRuns cr >>= evalRequest
-          return $ all (\ghCheckRun -> ghCheckRun.conclusion == "success") body'.check_runs
+          return $ all (\ghCheckRun -> ghCheckRun.conclusion == Just "success") body'.check_runs
 
 -- | Throws a 'SpremutaException' if the status is not 200. Handle some codes
 -- in a special way.
@@ -135,7 +135,6 @@ evalRequest request = do
         liftIO $ throwIO badBody
       Right b -> pure b
   let value :: Aeson.Value = seq body (Aeson.decode bodyBS) & fromJust
-  verbose $ show body
   debug $ showValue value
   return body
   where

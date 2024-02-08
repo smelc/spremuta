@@ -222,8 +222,8 @@ instance FromJSON GitHubCheckRuns
 data GitHubCheckRun = GitHubCheckRun
   { -- | The name of the run , for example "Lint"
     name :: String,
-    -- | For example "success"
-    conclusion :: String,
+    -- | For example @"success"@, or @"failure"@. Can also be @null@
+    conclusion :: Maybe String,
     -- | For example "completed"
     status :: String
   }
