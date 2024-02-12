@@ -46,7 +46,7 @@ runOnce daemonData@Data {tasksFile} = do
   -- But most of the time it will, which makes the UX better (error message instead
   -- of exception)
   fileExists <- liftIO $ doesFileExist tasksFile
-  -- We need strict reading, because we will write to the file soon, see
+  -- We need strict reading, because we may write to the file soon, see
   -- https://stackoverflow.com/a/5053188
   !tasks <- if fileExists then liftIO $ lines <$> readFileUTF8' tasksFile else pure []
   case (fileExists, tasks) of
@@ -57,9 +57,8 @@ runOnce daemonData@Data {tasksFile} = do
       log ("Tasks file is empty. Nothing to do.")
       return ()
     _ -> do
-      -- eatEmptyLines is not strictly necessary, but nice for the UX:
-      tasks <- filter (not . TasksFile.isCommented) <$> map TaskString <$> TasksFile.eatEmptyLines tasks tasksFile
-      case listToMaybe tasks of
+      let tasks' = filter (not . TasksFile.isCommented) $ map TaskString tasks
+      case listToMaybe tasks' of
         Nothing -> return ()
         Just taskStr -> runOnceOnTask daemonData taskStr
 
