@@ -46,6 +46,7 @@ common common-all
                         GADTs
                         NamedFieldPuns
                         LambdaCase
+                        MultiParamTypeClasses
                         OverloadedRecordDot
                         OverloadedStrings
                         RecordWildCards

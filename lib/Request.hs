@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | How to execute requests to the GitHub API.
 -- This module is meant to be used qualified.
