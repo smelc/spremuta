@@ -5,11 +5,10 @@ import Control.Monad.IO.Class
 import System.Environment (getArgs)
 import Prelude hiding (log)
 
-class (MonadIO m) => MonadLogger m where
+class (Monad m) => MonadLogger m where
   -- | Unconditionally log a line to stdout
   -- TODO @smelc: Change String to Text
   log :: String -> m ()
-  log = liftIO . putStrLn
 
   -- | Log a line to stdout if '--verbose' has been has been specified on the command line
   -- TODO @smelc: Change String to Text
@@ -27,17 +26,20 @@ class (MonadIO m) => MonadLogger m where
 
   -- | Returns whether @verbose@ has an effect
   hasVerbose :: m Bool
+
+  -- | Returns whether @debug@ has an effect
+  hasDebug :: m Bool
+
+instance MonadLogger IO where
+  log = liftIO . putStrLn
+
   hasVerbose = do
     args <- liftIO getArgs
     return $ ("--debug" `elem` args || "--verbose" `elem` args)
 
-  -- | Returns whether @debug@ has an effect
-  hasDebug :: m Bool
   hasDebug = do
     args <- liftIO getArgs
     return $ "--debug" `elem` args
-
-instance MonadLogger IO
 
 data LogLevel
   = Info

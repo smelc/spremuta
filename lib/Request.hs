@@ -127,7 +127,7 @@ handleStatus req response =
     _ -> liftIO $ throwIO $ ResponseKO req response
 
 -- | Performs a HTTP request and returns the body. Can throw a 'SpremutaException'.
-evalRequest :: forall a m. (Aeson.FromJSON a, Show a, MonadLogger m) => Request -> m a
+evalRequest :: forall a m. (Aeson.FromJSON a, Show a, MonadIO m, MonadLogger m) => Request -> m a
 evalRequest request = do
   response :: C.Response LBS.ByteString <- C.httpLBS request
   handleStatus request response
