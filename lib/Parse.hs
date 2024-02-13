@@ -91,8 +91,13 @@ pCondition = choice [pTrue, pNotTrue]
     pNotTrue = do
       pr <- pPR
       hspace1
-      s <- string "ismerged" <|> string "hasgreenci"
-      return $ case s of "ismerged" -> IsMerged pr; _ -> HasGreenCI pr
+      s <- string "hascifinished" <|> string "ismerged" <|> string "hasgreenci"
+      return $
+        case s of
+          "hascifinished" -> HasCIFinished pr
+          "ismerged" -> IsMerged pr
+          "hasgreenci" -> HasGreenCI pr
+          _ -> error $ "Unexpected string: " ++ s -- TODO @smelc Use megaparsec error handling
 
 pProtocol :: Parser String
 pProtocol =

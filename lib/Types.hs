@@ -39,6 +39,7 @@ instance Show Task where
       suffix =
         case cond of
           TrueCond -> Nothing
+          HasCIFinished {} -> Just $ show cond
           IsMerged {} -> Just $ show cond
           HasGreenCI {} -> Just $ show cond
 
@@ -69,6 +70,7 @@ instance Show Todo where
 -- | Some Boolean condition
 data Condition
   = TrueCond
+  | HasCIFinished PR
   | IsMerged PR
   | HasGreenCI PR
 
@@ -77,17 +79,19 @@ toConditionKind :: Task -> Maybe ConditionKind
 toConditionKind =
   \case
     Task _todo TrueCond -> Nothing
+    Task _todo (HasCIFinished _) -> Just HasCIFinishedKind
     Task _todo (IsMerged _) -> Just IsMergedKind
     Task _todo (HasGreenCI _) -> Just HasGreenCIKind
 
 -- | A kind for the cases of @Condition@ where the kind is useful
-data ConditionKind = IsMergedKind | HasGreenCIKind
+data ConditionKind = HasCIFinishedKind | IsMergedKind | HasGreenCIKind
   deriving (Eq)
 
 instance Show Condition where
   show =
     \case
       TrueCond -> "true"
+      HasCIFinished pr -> show pr ++ " hascifinished"
       IsMerged pr -> show pr ++ " ismerged"
       HasGreenCI pr -> show pr ++ " hasgreenci"
 

@@ -33,8 +33,12 @@ parseTasks = do
     `shouldSatisfy` isRight
   Parse.parseAny Parse.pTask "notify when https://github.com/smelc/spremuta/pull/2 hasgreenci"
     `shouldSatisfy` isRight
+  Parse.parseAny Parse.pTask "notify when https://github.com/smelc/spremuta/pull/2 hascifinished"
+    `shouldSatisfy` isRight
   Parse.parseAny Parse.pTask "merge https://github.com/smelc/spremuta/pull/1 when https://gitlab.com/tezos/tezos/-/merge_requests/10922 hasgreenci"
     `shouldSatisfyRight` (\t -> toConditionKind t == Just HasGreenCIKind)
+  Parse.parseAny Parse.pTask "notify when https://github.com/smelc/spremuta/pull/2 hascifinished"
+    `shouldSatisfyRight` (\t -> toConditionKind t == Just HasCIFinishedKind)
 
 parseGitHubURLs :: Expectation
 parseGitHubURLs = do

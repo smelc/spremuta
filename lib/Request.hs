@@ -13,9 +13,11 @@ import Control.Exception.Base (throwIO)
 import Control.Monad.Except
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encode.Pretty as Aeson
+import Data.Bifunctor (bimap)
 import qualified Data.ByteString.Lazy as LBS
 import Data.Function ((&))
-import Data.Maybe (fromJust)
+import Data.List (partition)
+import Data.Maybe (fromJust, isJust)
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
 import Exception (SpremutaException (..), mkBadBody)
@@ -46,6 +48,7 @@ instance REST (Options, Task) EvalResult where
         val :: Bool <- eval cond
         let msg = case cond of
               TrueCond -> "True 🤷"
+              HasCIFinished pr -> "CI of " ++ show pr ++ " is finished"
               IsMerged pr -> show pr ++ " is " ++ (if not val then "not " else "") ++ "merged"
               HasGreenCI pr -> show pr ++ " has " ++ (if val then "green" else "red") ++ " CI"
         case val of
@@ -75,6 +78,7 @@ instance REST Condition Bool where
   eval cond =
     case cond of
       TrueCond -> return True
+      HasCIFinished pr -> go pr.vcs cond
       IsMerged pr -> go pr.vcs cond
       HasGreenCI pr -> go pr.vcs cond
     where
@@ -87,6 +91,7 @@ evalGitHubCondition :: (MonadIO m, MonadLogger m) => Condition -> m Bool
 evalGitHubCondition =
   \case
     TrueCond -> return True
+    HasCIFinished pr -> go HasCIFinishedKind pr
     IsMerged pr -> go IsMergedKind pr
     HasGreenCI pr -> go HasGreenCIKind pr
   where
@@ -94,6 +99,16 @@ evalGitHubCondition =
     go cond pr@PR {owner, repo, vcs} = do
       body :: GitHubPR <- liftIO $ RequestMaker.makePR pr >>= evalRequest
       case cond of
+        HasCIFinishedKind -> do
+          let sha = body.head.sha
+              cr = CheckRuns {owner, repo, sha, vcs}
+          body' :: GitHubCheckRuns <- liftIO $ RequestMaker.makeCheckRuns cr >>= evalRequest
+          let (finished, pending) =
+                bimap length length $
+                  partition (\ghCheckRun -> isJust $ ghCheckRun.conclusion) body'.check_runs
+              total = finished + pending
+          log $ "CI progress for " <> show pr <> ": " <> show finished <> "/" <> show total
+          return $ pending == 0
         IsMergedKind ->
           return body.merged
         HasGreenCIKind -> do
