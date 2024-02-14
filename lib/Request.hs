@@ -40,22 +40,29 @@ data EvalResult
     RemoveMe
 
 instance REST (Options, Task) EvalResult where
-  eval (opts, Task todo cond) =
+  eval (opts, t@(Task todo cond)) =
     case todo of
       Merge _pr -> error "TODO"
       Notify -> do
-        val :: Bool <- eval cond
-        let msg = case cond of
-              TrueCond -> "True 🤷"
-              HasCIFinished pr -> "CI of " ++ show pr ++ " is finished"
-              IsMerged pr -> show pr ++ " is " ++ (if not val then "not " else "") ++ "merged"
-              HasGreenCI pr -> show pr ++ " has " ++ (if val then "green" else "red") ++ " CI"
-        case val of
-          False ->
-            return KeepMe
-          True -> do
-            notify opts msg
+        conditionTruth :: Bool <- eval cond
+        if conditionTruth
+          then do
+            let notifyMsg = case cond of
+                  TrueCond -> "True 🤷"
+                  HasCIFinished pr -> "CI of " ++ show pr ++ " is finished"
+                  IsMerged pr -> show pr ++ " is merged"
+                  HasGreenCI pr -> show pr ++ " has green CI"
+            notify opts notifyMsg
             return RemoveMe
+          else do
+            let logMsg = case cond of
+                  TrueCond -> error "\"when true\" should always yield a notification"
+                  HasCIFinished pr -> "CI of " ++ show pr ++ " is not finished"
+                  IsMerged pr -> show pr ++ " is not merged"
+                  HasGreenCI pr -> show pr ++ " has red CI"
+            log logMsg
+            log $ "Keeping task: " <> show t
+            return KeepMe
       SetReady _pr -> error "TODO"
 
 notify :: (MonadIO m, MonadLogger m) => Options -> String -> m ()

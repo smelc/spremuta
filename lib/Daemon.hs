@@ -35,7 +35,6 @@ data Data = Data
 
 run :: (MonadIO m, MonadLogger m) => Data -> m ()
 run daemonData@Data {frequency = freq} = do
-  verbose $ "Tick " <> show daemonData.tick
   runOnce daemonData
   T.threadDelay $ T.minute (freq % 1)
   run daemonData {tick = daemonData.tick + 1}
@@ -57,9 +56,12 @@ runOnce daemonData@Data {tasksFile} = do
       log ("Tasks file is empty. Nothing to do.")
       return ()
     _ -> do
-      let tasks' = filter (not . TasksFile.isCommented) $ map TaskString tasks
+      let nbTasks = length tasks
+          tasks' = filter (not . TasksFile.isCommented) $ map TaskString tasks
       case listToMaybe tasks' of
-        Nothing -> return ()
+        Nothing -> do
+          log ("All " <> show nbTasks <> " lines are commented out. Nothing to do.")
+          return ()
         Just taskStr -> runOnceOnTask daemonData taskStr
 
 -- | The continuation of @runOnce@ that deals with executing with the first
