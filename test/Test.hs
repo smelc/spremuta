@@ -7,6 +7,7 @@ import Data.Either
 import GHC.IO.Exception (ExitCode (ExitSuccess))
 import qualified Parse
 import System.Process.Extra (readProcessWithExitCode)
+import qualified TasksFile
 import Test.Hspec
 import Types
 
@@ -74,6 +75,27 @@ goldenHelp goldenFile callerArgs = do
     -- --verbose=0 avoids printing "Up to date"
     args = ["--verbose=0", "run", "spremuta", "--"] ++ callerArgs ++ ["--help"]
 
+commentTask :: Expectation
+commentTask = do
+  TasksFile.commentTask' (mkTestFileOps []) () (TaskString "")
+    `shouldReturn` TasksFile.Nop
+  TasksFile.commentTask' (mkTestFileOps ["foo"]) () (TaskString "foo")
+    `shouldReturn` (TasksFile.Comment 1)
+  TasksFile.commentTask' (mkTestFileOps ["foo"]) () (TaskString "bar")
+    `shouldReturn` TasksFile.Nop
+  TasksFile.commentTask' (mkTestFileOps ["foo", "bar"]) () (TaskString "bar")
+    `shouldReturn` (TasksFile.Comment 2)
+  where
+    -- A mock for @TasksFile.FileOps@ that mimicks a file
+    -- that exists, has the given content, and writing to the file does nothing.
+    mkTestFileOps :: (Monad m) => [String] -> TasksFile.FileOps () m
+    mkTestFileOps content =
+      TasksFile.FileOps
+        { fileExists = const $ return True,
+          readFile = const $ return $ unlines content,
+          writeFile = const $ return $ pure ()
+        }
+
 main :: IO ()
 main = hspec $ do
   describe "golden" $ do
@@ -86,5 +108,6 @@ main = hspec $ do
   describe "parse URL" $ do
     it "GitHub" parseGitHubURLs
     it "GitLab" parseGitLabURLs
-  describe "parse tasks" $ do
-    it "Tasks" parseTasks
+  describe "Tasks" $ do
+    it "parse" parseTasks
+    it "comment" commentTask -- This test shows warning of the form "This is unexpected". That's normal.

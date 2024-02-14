@@ -76,7 +76,7 @@ runOnceOnTask _daemonData@Data {tasksFile, options} t@(TaskString taskStr) = do
     Left parseError -> do
       log $ "Cannot parse task \"" <> taskStr <> "\": " <> parseError
       log $ "Commenting this task in tasks file: " <> tasksFile
-      void $ TasksFile.commentTask t tasksFile
+      void $ TasksFile.commentTask tasksFile t
     Right task -> do
       _r :: Request.EvalResult <- Request.eval (options, task)
       -- TODO do something with the result
