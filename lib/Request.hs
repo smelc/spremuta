@@ -5,6 +5,7 @@
 module Request
   ( EvalResult (..),
     REST (..),
+    RESTInput (..),
   )
 where
 
@@ -39,8 +40,16 @@ data EvalResult
   | -- | In daemon mode: task has been completed, and should be removed
     RemoveMe
 
-instance REST (Options, Task) EvalResult where
-  eval (opts, t@(Task todo cond)) =
+-- | Data passed to the main 'REST' instance.
+data RESTInput = RestInput
+  { -- | The options passed to the CLI
+    options :: Options,
+    -- | The task to execute
+    task :: Task
+  }
+
+instance REST RESTInput EvalResult where
+  eval RestInput {options, task = t@(Task todo cond)} =
     case todo of
       Merge _pr -> error "TODO"
       Notify -> do
@@ -52,7 +61,7 @@ instance REST (Options, Task) EvalResult where
                   HasCIFinished pr -> "CI of " ++ show pr ++ " is finished"
                   IsMerged pr -> show pr ++ " is merged"
                   HasGreenCI pr -> show pr ++ " has green CI"
-            notify opts notifyMsg
+            notify options notifyMsg
             return RemoveMe
           else do
             let logMsg = case cond of

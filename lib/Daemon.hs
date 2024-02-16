@@ -80,6 +80,7 @@ runOnceOnTask _daemonData@Data {tasksFile, options} t@(TaskString taskStr) = do
       log $ "Commenting this task in tasks file: " <> tasksFile
       void $ TasksFile.commentTask tasksFile t
     Right task -> do
-      _r :: Request.EvalResult <- Request.eval (options, task)
+      let input = Request.RestInput {options, task}
+      _r :: Request.EvalResult <- Request.eval input
       -- TODO do something with the result
       return ()

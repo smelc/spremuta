@@ -49,4 +49,4 @@ setHeaders vcs req =
   where
     addHeader (name, value) = addRequestHeader name value
     agent = ("User-Agent", "HTTP-Conduit")
-    req' = addHeader agent req
+    req' = addHeader agent req -- Base value for all VCS

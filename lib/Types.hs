@@ -120,7 +120,7 @@ data Command
     DaemonCmd Natural FilePath
   deriving (Show)
 
--- * VCS agnostic types
+-- * VCS agnostic types that are used for REST interactions
 
 --
 -- Types used in all backends
@@ -151,7 +151,7 @@ data CheckRuns = CheckRuns
     vcs :: VCS
   }
 
--- * GitHub types
+-- * GitHub types that are used for REST interactions
 
 --
 -- Types that are specific to GitHub
