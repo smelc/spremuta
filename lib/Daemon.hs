@@ -23,7 +23,9 @@ import Prelude hiding (log)
 
 -- | Data that is needed to execute the daemon. Name meant to be used qualified.
 data Data = Data
-  { -- | Frequency at which to wake up (in minutes)
+  { -- | How to authenticate to the backend VCS
+    auth :: Maybe VCSAuth,
+    -- | Frequency at which to wake up (in minutes)
     frequency :: Natural,
     -- | The path to the tasks file
     tasksFile :: FilePath,
@@ -73,14 +75,14 @@ runOnceOnTask ::
   -- | The task to execute
   TaskString ->
   m ()
-runOnceOnTask _daemonData@Data {tasksFile, options} t@(TaskString taskStr) = do
+runOnceOnTask Data {auth, tasksFile, options} t@(TaskString taskStr) = do
   case Parse.parseAny Parse.pTask taskStr of
     Left parseError -> do
       log $ "Cannot parse task \"" <> taskStr <> "\": " <> parseError
       log $ "Commenting this task in tasks file: " <> tasksFile
       void $ TasksFile.commentTask tasksFile t
     Right task -> do
-      let input = Request.RestInput {options, task}
+      let input = Request.RestInput {auth, options, task}
       _r :: Request.EvalResult <- Request.eval input
       -- TODO do something with the result
       return ()

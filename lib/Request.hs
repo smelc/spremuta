@@ -42,21 +42,31 @@ data EvalResult
 
 -- | Data passed to the main 'REST' instance.
 data RESTInput = RestInput
-  { -- | The options passed to the CLI
+  { -- | How to authentify to the VCS backend
+    auth :: Maybe VCSAuth,
+    -- | The options passed to the CLI
     options :: Options,
     -- | The task to execute
     task :: Task
   }
 
+-- | Data passed to the 'REST' instance dealing with 'Condition'
+data RESTConditionInput = RESTConditionInput
+  { -- | How to authentify to the VCS backend
+    auth :: Maybe VCSAuth,
+    -- | The condition to check
+    condition :: Condition
+  }
+
 instance REST RESTInput EvalResult where
-  eval RestInput {options, task = t@(Task todo cond)} =
+  eval RestInput {auth, options, task = t@(Task todo condition)} =
     case todo of
       Merge _pr -> error "TODO"
       Notify -> do
-        conditionTruth :: Bool <- eval cond
+        conditionTruth :: Bool <- eval $ RESTConditionInput {auth, condition}
         if conditionTruth
           then do
-            let notifyMsg = case cond of
+            let notifyMsg = case condition of
                   TrueCond -> "True 🤷"
                   HasCIFinished pr -> "CI of " ++ show pr ++ " is finished"
                   IsMerged pr -> show pr ++ " is merged"
@@ -64,7 +74,7 @@ instance REST RESTInput EvalResult where
             notify options notifyMsg
             return RemoveMe
           else do
-            let logMsg = case cond of
+            let logMsg = case condition of
                   TrueCond -> error "\"when true\" should always yield a notification"
                   HasCIFinished pr -> "CI of " ++ show pr ++ " is not finished"
                   IsMerged pr -> show pr ++ " is not merged"
@@ -89,22 +99,22 @@ notify Options {notifyCmd} msg =
       -- Calling spawnProcess: we don't want to wait for this program to finish
       void $ liftIO $ spawnProcess program (args ++ [msg])
 
-instance REST Condition Bool where
-  eval cond =
-    case cond of
+instance REST RESTConditionInput Bool where
+  eval rci@RESTConditionInput {condition} =
+    case condition of
       TrueCond -> return True
-      HasCIFinished pr -> go pr.vcs cond
-      IsMerged pr -> go pr.vcs cond
-      HasGreenCI pr -> go pr.vcs cond
+      HasCIFinished pr -> go pr.vcs
+      IsMerged pr -> go pr.vcs
+      HasGreenCI pr -> go pr.vcs
     where
-      go vcs cond =
+      go vcs =
         case vcs of
-          GitHub -> evalGitHubCondition cond
+          GitHub -> evalGitHubCondition rci
           GitLab -> error "REST Condition Bool: GitLab not supported"
 
-evalGitHubCondition :: (MonadIO m, MonadLogger m) => Condition -> m Bool
-evalGitHubCondition =
-  \case
+evalGitHubCondition :: (MonadIO m, MonadLogger m) => RESTConditionInput -> m Bool
+evalGitHubCondition RESTConditionInput {auth, condition} =
+  case condition of
     TrueCond -> return True
     HasCIFinished pr -> go HasCIFinishedKind pr
     IsMerged pr -> go IsMergedKind pr
@@ -112,12 +122,12 @@ evalGitHubCondition =
   where
     go :: (MonadIO m, MonadLogger m) => ConditionKind -> PR -> m Bool
     go cond pr@PR {owner, repo, vcs} = do
-      body :: GitHubPR <- liftIO $ RequestMaker.makePR pr >>= evalRequest
+      body :: GitHubPR <- liftIO $ RequestMaker.make auth pr >>= evalRequest
       case cond of
         HasCIFinishedKind -> do
           let sha = body.head.sha
               cr = CheckRuns {owner, repo, sha, vcs}
-          body' :: GitHubCheckRuns <- liftIO $ RequestMaker.makeCheckRuns cr >>= evalRequest
+          body' :: GitHubCheckRuns <- liftIO $ RequestMaker.make auth cr >>= evalRequest
           let (finished, pending) =
                 bimap length length $
                   partition (\ghCheckRun -> isJust $ ghCheckRun.conclusion) body'.check_runs
@@ -129,7 +139,7 @@ evalGitHubCondition =
         HasGreenCIKind -> do
           let sha = body.head.sha
               cr = CheckRuns {owner, repo, sha, vcs}
-          body' :: GitHubCheckRuns <- liftIO $ RequestMaker.makeCheckRuns cr >>= evalRequest
+          body' :: GitHubCheckRuns <- liftIO $ RequestMaker.make auth cr >>= evalRequest
           return $ all (\ghCheckRun -> ghCheckRun.conclusion == Just "success") body'.check_runs
 
 -- | Throws a 'SpremutaException' if the status is not 200. Handle some codes

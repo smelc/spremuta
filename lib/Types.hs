@@ -95,7 +95,17 @@ instance Show Condition where
       IsMerged pr -> show pr ++ " ismerged"
       HasGreenCI pr -> show pr ++ " hasgreenci"
 
--- * Types used when parting the CLI
+-- | How to authenticate to the different VCS
+-- Intentionally no Show instance: you don't want to print instances
+-- of this type to the terminal!
+data VCSAuth = VCSAuth
+  { -- | The username used to authenticate to GitHub or GitLab
+    user :: String,
+    -- | The personnal access token used to authenticate to GitHub or GitLab
+    pat :: String
+  }
+
+-- * Types used when parsing CLI commands
 
 -- | The type of options. If adding new options,
 -- you probably want to extend this datatype. It's important that the
