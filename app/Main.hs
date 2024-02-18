@@ -19,7 +19,7 @@ main = do
   auth <- getAuth
   case command of
     TaskCmd task -> do
-      let input = Request.RestInput {auth, options, task}
+      let input = Request.RESTInput {auth, options, task}
       _ :: Request.EvalResult <- Request.eval input `catch` handler
       return ()
     DaemonCmd frequency tasksFile ->

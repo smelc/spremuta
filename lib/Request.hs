@@ -41,7 +41,7 @@ data EvalResult
     RemoveMe
 
 -- | Data passed to the main 'REST' instance.
-data RESTInput = RestInput
+data RESTInput = RESTInput
   { -- | How to authentify to the VCS backend
     auth :: Maybe VCSAuth,
     -- | The options passed to the CLI
@@ -59,7 +59,7 @@ data RESTConditionInput = RESTConditionInput
   }
 
 instance REST RESTInput EvalResult where
-  eval RestInput {auth, options, task = t@(Task todo condition)} =
+  eval RESTInput {auth, options, task = t@(Task todo condition)} =
     case todo of
       Merge _pr -> error "TODO"
       Notify -> do

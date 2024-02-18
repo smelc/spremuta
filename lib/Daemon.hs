@@ -82,7 +82,7 @@ runOnceOnTask Data {auth, tasksFile, options} t@(TaskString taskStr) = do
       log $ "Commenting this task in tasks file: " <> tasksFile
       void $ TasksFile.commentTask tasksFile t
     Right task -> do
-      let input = Request.RestInput {auth, options, task}
+      let input = Request.RESTInput {auth, options, task}
       _r :: Request.EvalResult <- Request.eval input
       -- TODO do something with the result
       return ()
