@@ -19,6 +19,13 @@ jobs:
             ! git grep "{-# OPTIONS_GHC $warning #-}"
           done
 
+      - name: Check for dubious occurrences in Haskell code
+        run: |
+          for dubious in undefined
+          do
+            ! git grep $dubious "*.hs"
+          done
+
       - name: Check Haskell files formatting with Ormolu
         uses: haskell-actions/run-ormolu@v14
         with:
