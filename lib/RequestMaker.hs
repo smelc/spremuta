@@ -2,7 +2,6 @@
 module RequestMaker (RequestMaker (..)) where
 
 import Conduit (MonadThrow)
-import Control.Monad.Except
 import Data.ByteString.Char8 as BS
 import Data.Function ((&))
 import Network.HTTP.Simple

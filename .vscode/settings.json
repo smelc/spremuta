@@ -3,5 +3,6 @@
         "haskell.upgradeGHCup": false,
         "haskell.formattingProvider": "ormolu",
         "haskell.plugin.hlint.diagnosticsOn": false,
-        "haskell.serverExecutablePath": "haskell-language-server-9.4.7~2.4.0.0"
+        "haskell.serverExecutablePath": "haskell-language-server-9.8.1~2.6.0.0"
+
 }

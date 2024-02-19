@@ -10,7 +10,8 @@ module Request
 where
 
 import Control.Exception.Base (throwIO)
-import Control.Monad.Except
+import Control.Monad (void)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encode.Pretty as Aeson
 import Data.Bifunctor (bimap)

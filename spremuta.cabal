@@ -15,8 +15,8 @@ copyright:          Do whatever you want with that
 extra-source-files: CHANGELOG.md
 
 common common-all
-     default-language: Haskell2010
-     build-depends:    base ^>=4.17.0.0
+    default-language:  Haskell2010
+    build-depends:     base ^>=4.19.0.0
                      , aeson
                      , aeson-pretty
                      , bytestring
@@ -27,20 +27,11 @@ common common-all
                      , mtl
                      , o-clock
                      , text
-     hs-source-dirs:   lib
-     other-modules:    Daemon
-                     , Exception
-                     , Log
-                     , Parse
-                     , Request
-                     , RequestMaker
-                     , TasksFile
-                     , Types
-     ghc-options:      -Wall
-                       -Wunticked-promoted-constructors
-                       -Wno-name-shadowing
-                       -Werror
-                       -Wwarn=missing-home-modules
+    ghc-options:     -Wall
+                     -Wunticked-promoted-constructors
+                     -Wno-name-shadowing
+                     -Werror
+                     -Wwarn=missing-home-modules
     default-extensions: DataKinds
                         DuplicateRecordFields
                         GADTs
@@ -54,8 +45,20 @@ common common-all
                         StrictData
                         TypeApplications
 
+library spremuta-lib
+     import:           common-all
+     hs-source-dirs:   lib
+     exposed-modules:  Daemon
+                     , Exception
+                     , Log
+                     , Parse
+                     , Request
+                     , RequestMaker
+                     , TasksFile
+                     , Types
+
 executable spremuta
-    import: common-all
+    import:           common-all
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
@@ -63,7 +66,8 @@ executable spremuta
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-    build-depends:    base ^>=4.17.0.0
+    build-depends:    spremuta-lib
+
                     , aeson
                     , extra
                     , http-conduit
@@ -75,10 +79,11 @@ Test-Suite testmuta
     import:           common-all
     type:             exitcode-stdio-1.0
     main-is:          Test.hs
-    hs-source-dirs:   lib
-                    , test
+    hs-source-dirs:   test
     other-modules:
-    build-depends:    generic-random
+    build-depends:    spremuta-lib
+
+                    , generic-random
                     , hspec
                     , QuickCheck
 
@@ -88,5 +93,7 @@ Test-Suite iotest
     main-is:          IOTest.hs
     hs-source-dirs:   iotest
     other-modules:
-    build-depends:    hspec
+    build-depends:    spremuta-lib
+
+                    , hspec
                     , MissingH

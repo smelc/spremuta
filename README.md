@@ -11,7 +11,7 @@ do
 done
 
 ghcup install cabal --isolate $(pwd)/bin/cabal
-ghcup install ghc 9.4.7 --isolate $(pwd)/bin/ghc
+ghcup install ghc 9.8.1 --isolate $(pwd)/bin/ghc
 ```
 
 Install `ormolu` version `0.7.3.0` (⚠️ version number also mentioned in
