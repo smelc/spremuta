@@ -83,6 +83,10 @@ runOnceOnTask Data {auth, tasksFile, options} t@(TaskString taskStr) = do
       void $ TasksFile.mapTask (\s -> "# unparsable: " <> s) tasksFile t
     Right task -> do
       let input = Request.RESTInput {auth, options, task}
-      _r :: Request.EvalResult <- Request.eval input
-      -- TODO do something with the result
-      return ()
+      evalResult :: Request.EvalResult <- Request.eval input
+      case evalResult of
+        Request.KeepMe ->
+          return ()
+        Request.RemoveMe -> do
+          void $ TasksFile.mapTask (\s -> "# done: " <> s) tasksFile t
+          return ()

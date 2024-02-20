@@ -80,6 +80,7 @@ mapTask' f fileOps tasksFile (TaskString taskStr) = do
   tasks <- if fileExists then lines <$> fileOps.readFile tasksFile else pure []
   case commentTask 1 tasks of -- Line numbers start at 1
     (_, Nothing) -> do
+      -- TODO don't do this log: let callers do it
       log $ "Task not found in tasks file: " <> taskStr <> ". Cannot comment it. This is unexpected 🙁"
       return Nop
     (toWrite, Just changed) -> do
