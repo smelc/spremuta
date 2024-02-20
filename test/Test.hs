@@ -96,6 +96,15 @@ commentTask = do
           writeFile = const $ return $ pure ()
         }
 
+isCommented :: Expectation
+isCommented = do
+  TasksFile.isCommented (TaskString "#foo") `shouldBe` True
+  TasksFile.isCommented (TaskString "# foo") `shouldBe` True
+  TasksFile.isCommented (TaskString "   # foo") `shouldBe` True
+  TasksFile.isCommented (TaskString " blah") `shouldBe` False
+  TasksFile.isCommented (TaskString " blah # foo") `shouldBe` False
+  TasksFile.isCommented (TaskString "") `shouldBe` False
+
 main :: IO ()
 main = hspec $ do
   describe "golden" $ do
@@ -111,3 +120,4 @@ main = hspec $ do
   describe "Tasks" $ do
     it "parse" parseTasks
     it "comment" commentTask -- This test shows warning of the form "This is unexpected". That's normal.
+    it "isCommented" isCommented
