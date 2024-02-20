@@ -120,5 +120,5 @@ main = hspec $ do
     it "GitLab" parseGitLabURLs
   describe "Tasks" $ do
     it "parse" parseTasks
-    it "comment" commentTask -- This test shows warning of the form "This is unexpected". That's normal.
+    it "comment" commentTask
     it "isCommented" isCommented

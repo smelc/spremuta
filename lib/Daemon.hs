@@ -80,7 +80,13 @@ runOnceOnTask Data {auth, tasksFile, options} t@(TaskString taskStr) = do
     Left parseError -> do
       log $ "Cannot parse task \"" <> taskStr <> "\": " <> parseError
       log $ "Commenting this task in tasks file: " <> tasksFile
-      void $ TasksFile.mapTask (\s -> "# unparsable: " <> s) tasksFile t
+      mapEffect <- TasksFile.mapTask (\s -> "# unparsable: " <> s) tasksFile t
+      void $ case mapEffect of
+        TasksFile.Mapped _ ->
+          return ()
+        TasksFile.Nop ->
+          log $ "Cannot comment task \"" <> taskStr <> "\" in tasks file: " <> tasksFile <> ". This is unexpected 🙁"
+      return ()
     Right task -> do
       let input = Request.RESTInput {auth, options, task}
       evalResult :: Request.EvalResult <- Request.eval input

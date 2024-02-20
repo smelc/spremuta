@@ -13,7 +13,6 @@ import Control.Monad (void)
 import Control.Monad.IO.Class
 import Data.Char (isSpace)
 import Data.Maybe (listToMaybe)
-import Log
 import System.Directory.Extra (doesFileExist)
 import System.IO.Extra (readFileUTF8', writeFileUTF8)
 import Types
@@ -44,7 +43,7 @@ fileOpsIO =
 -- | The production implementation of mapping over a single task in a tasks file:
 -- @mapTask (\s -> "# " <> s) f task@ comments @task@ in @f@
 mapTask ::
-  (MonadIO m, MonadLogger m) =>
+  (MonadIO m) =>
   -- | What to do on the task's line
   (String -> String) ->
   -- The file in which to comment the task
@@ -59,7 +58,7 @@ mapTask f tasksFile t = mapTask' f fileOpsIO tasksFile t
 -- used in production and in tests. For example,
 -- @mapTask' (\s -> "# " ++ s) ops f task@ comments @task@ in @f@
 mapTask' ::
-  (MonadLogger m) =>
+  (Monad m) =>
   -- | What to do on the task's line
   (String -> String) ->
   -- | How to operate on @file@. Use 'fileOpsIO' to obtain a production instance.
@@ -80,8 +79,6 @@ mapTask' f fileOps tasksFile (TaskString taskStr) = do
   tasks <- if fileExists then lines <$> fileOps.readFile tasksFile else pure []
   case commentTask 1 tasks of -- Line numbers start at 1
     (_, Nothing) -> do
-      -- TODO don't do this log: let callers do it
-      log $ "Task not found in tasks file: " <> taskStr <> ". Cannot comment it. This is unexpected 🙁"
       return Nop
     (toWrite, Just changed) -> do
       fileOps.writeFile tasksFile $ unlines toWrite
