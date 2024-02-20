@@ -77,14 +77,14 @@ goldenHelp goldenFile callerArgs = do
 
 commentTask :: Expectation
 commentTask = do
-  TasksFile.commentTask' (mkTestFileOps []) () (TaskString "")
+  TasksFile.mapTask' f (mkTestFileOps []) () (TaskString "")
     `shouldReturn` TasksFile.Nop
-  TasksFile.commentTask' (mkTestFileOps ["foo"]) () (TaskString "foo")
-    `shouldReturn` (TasksFile.Comment 1)
-  TasksFile.commentTask' (mkTestFileOps ["foo"]) () (TaskString "bar")
+  TasksFile.mapTask' f (mkTestFileOps ["foo"]) () (TaskString "foo")
+    `shouldReturn` (TasksFile.Mapped 1)
+  TasksFile.mapTask' f (mkTestFileOps ["foo"]) () (TaskString "bar")
     `shouldReturn` TasksFile.Nop
-  TasksFile.commentTask' (mkTestFileOps ["foo", "bar"]) () (TaskString "bar")
-    `shouldReturn` (TasksFile.Comment 2)
+  TasksFile.mapTask' f (mkTestFileOps ["foo", "bar"]) () (TaskString "bar")
+    `shouldReturn` (TasksFile.Mapped 2)
   where
     -- A mock for @TasksFile.FileOps@ that mimicks a file
     -- that exists, has the given content, and writing to the file does nothing.
@@ -95,6 +95,7 @@ commentTask = do
           readFile = const $ return $ unlines content,
           writeFile = const $ return $ pure ()
         }
+    f s = "# " <> s
 
 isCommented :: Expectation
 isCommented = do

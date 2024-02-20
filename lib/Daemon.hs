@@ -80,7 +80,7 @@ runOnceOnTask Data {auth, tasksFile, options} t@(TaskString taskStr) = do
     Left parseError -> do
       log $ "Cannot parse task \"" <> taskStr <> "\": " <> parseError
       log $ "Commenting this task in tasks file: " <> tasksFile
-      void $ TasksFile.commentTask tasksFile t
+      void $ TasksFile.mapTask (\s -> "# unparsable: " <> s) tasksFile t
     Right task -> do
       let input = Request.RESTInput {auth, options, task}
       _r :: Request.EvalResult <- Request.eval input
