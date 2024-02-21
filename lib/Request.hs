@@ -81,7 +81,6 @@ instance REST RESTInput EvalResult where
                   IsMerged pr -> show pr ++ " is not merged"
                   HasGreenCI pr -> show pr ++ " has red CI"
             log logMsg
-            log $ "Keeping task: " <> show t
             return KeepMe
       SetReady _pr -> error "TODO"
 

@@ -91,8 +91,10 @@ runOnceOnTask Data {auth, tasksFile, options} t@(TaskString taskStr) = do
       let input = Request.RESTInput {auth, options, task}
       evalResult :: Request.EvalResult <- Request.eval input
       case evalResult of
-        Request.KeepMe ->
+        Request.KeepMe -> do
+          log $ "Keeping task: " <> taskStr
           return ()
         Request.RemoveMe -> do
+          log $ "Removing accomplished task: " <> taskStr
           void $ TasksFile.mapTask (\s -> "# done: " <> s) tasksFile t
           return ()
