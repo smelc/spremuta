@@ -60,7 +60,7 @@ data RESTConditionInput = RESTConditionInput
   }
 
 instance REST RESTInput EvalResult where
-  eval RESTInput {auth, options, task = t@(Task todo condition)} =
+  eval RESTInput {auth, options, task = Task todo condition} =
     case todo of
       Merge _pr -> error "TODO"
       Notify -> do

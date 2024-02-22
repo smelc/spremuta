@@ -52,17 +52,18 @@ runOnce daemonData@Data {tasksFile} = do
   !tasks <- if fileExists then liftIO $ lines <$> readFileUTF8' tasksFile else pure []
   case (fileExists, tasks) of
     (False, _) -> do
-      log ("Tasks file does not exist: " <> tasksFile <> ". Nothing to do.")
+      log ("Tasks file does not exist: " <> tasksFile <> ": nothing to do.")
       return ()
     (True, []) -> do
-      log ("Tasks file is empty. Nothing to do.")
+      log ("Tasks file is empty: nothing to do.")
       return ()
     _ -> do
       let nbTasks = length tasks
           tasks' = filter (not . TasksFile.isCommented) $ map TaskString tasks
+          lineStr = \case 1 -> "line"; _ -> "lines"
       case listToMaybe tasks' of
         Nothing -> do
-          log ("All " <> show nbTasks <> " lines are commented out. Nothing to do.")
+          log ("All " <> show nbTasks <> " " <> lineStr nbTasks <> " are commented out: nothing to do.")
           return ()
         Just taskStr -> runOnceOnTask daemonData taskStr
 
